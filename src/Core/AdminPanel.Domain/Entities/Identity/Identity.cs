@@ -36,6 +36,7 @@ public class Role : BaseEntity
     // Navigation
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+    public ICollection<RolePageAction> RolePageActions { get; set; } = new List<RolePageAction>();
 }
 
 public class Permission : BaseEntity

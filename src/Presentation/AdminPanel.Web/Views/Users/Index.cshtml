@@ -16,37 +16,46 @@
 <!-- Filters -->
 <div class="card table-card mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-4">
-                <input type="text" name="SearchTerm" class="form-control" placeholder="بحث..." value="@Model.Filter.SearchTerm" />
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">بحث</label>
+                <input type="text" name="SearchTerm" class="form-control" placeholder="اسم، بريد، مستخدم..." value="@Model.Filter.SearchTerm" />
             </div>
             <div class="col-md-2">
+                <label class="form-label small text-muted">الحالة</label>
                 <select name="IsActive" class="form-select">
                     <option value="">كل الحالات</option>
-                    <option value="true" selected="@(Model.Filter.IsActive == true)">نشط</option>
-                    <option value="false" selected="@(Model.Filter.IsActive == false)">غير نشط</option>
+                    <option value="true" selected="@(Model.Filter.IsActive == true ? "selected" : null)">نشط</option>
+                    <option value="false" selected="@(Model.Filter.IsActive == false ? "selected" : null)">غير نشط</option>
                 </select>
             </div>
             <div class="col-md-2">
+                <label class="form-label small text-muted">الدور</label>
                 <select name="RoleId" class="form-select">
                     <option value="">كل الأدوار</option>
                     @foreach (var role in Model.AvailableRoles)
                     {
-                        <option value="@role.Id" selected="@(Model.Filter.RoleId == role.Id)">@role.Name</option>
+                        <option value="@role.Id" selected="@(Model.Filter.RoleId == role.Id ? "selected" : null)">@role.Name</option>
                     }
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
+                <label class="form-label small text-muted">عدد</label>
                 <select name="PageSize" class="form-select">
-                    <option value="10" selected="@(Model.Filter.PageSize == 10)">10</option>
-                    <option value="25" selected="@(Model.Filter.PageSize == 25)">25</option>
-                    <option value="50" selected="@(Model.Filter.PageSize == 50)">50</option>
+                    <option value="10" selected="@(Model.Filter.PageSize == 10 ? "selected" : null)">10</option>
+                    <option value="25" selected="@(Model.Filter.PageSize == 25 ? "selected" : null)">25</option>
+                    <option value="50" selected="@(Model.Filter.PageSize == 50 ? "selected" : null)">50</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-primary w-100">
+                <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-search me-1"></i>بحث
                 </button>
+            </div>
+            <div class="col-md-2">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>عرض الكل
+                </a>
             </div>
         </form>
     </div>
@@ -204,7 +213,7 @@
     <script>
         function confirmDelete(id, username) {
             document.getElementById('usernameToDelete').textContent = username;
-            document.getElementById('deleteForm').action = '@Url.Action("Delete")/' + id;
+            document.getElementById('deleteForm').action = '/Users/Delete/' + id;
             new bootstrap.Modal(document.getElementById('deleteModal')).show();
         }
     </script>
