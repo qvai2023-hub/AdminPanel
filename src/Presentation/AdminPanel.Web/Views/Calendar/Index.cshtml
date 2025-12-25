@@ -1,0 +1,578 @@
+@model CalendarViewModel
+@{
+    ViewData["Title"] = "التقويم";
+    var prevYear = Model.UseHijriNavigation ? Model.HijriYear : Model.Year;
+    var prevMonth = Model.UseHijriNavigation ? Model.HijriMonth - 1 : Model.Month - 1;
+    var nextYear = Model.UseHijriNavigation ? Model.HijriYear : Model.Year;
+    var nextMonth = Model.UseHijriNavigation ? Model.HijriMonth + 1 : Model.Month + 1;
+
+    // Handle month overflow
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    if (nextMonth > 12) { nextMonth = 1; nextYear++; }
+}
+
+<style>
+    .calendar-container {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .calendar-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        color: #fff;
+        padding: 20px;
+    }
+
+    .calendar-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .calendar-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+
+    .calendar-nav .btn {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+
+    .calendar-nav .btn:hover {
+        background: rgba(255,255,255,0.3);
+        color: #fff;
+    }
+
+    .calendar-title {
+        text-align: center;
+    }
+
+    .calendar-title .gregorian {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .calendar-title .hijri {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    .calendar-mode-toggle {
+        display: flex;
+        gap: 10px;
+    }
+
+    .calendar-mode-toggle .btn {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.875rem;
+    }
+
+    .calendar-mode-toggle .btn.active {
+        background: #fff;
+        color: #0d6efd;
+    }
+
+    .today-info {
+        background: rgba(255,255,255,0.15);
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+    }
+
+    .today-info .date-display {
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+    }
+
+    .today-info .date-item {
+        flex: 1;
+    }
+
+    .today-info .date-label {
+        font-size: 0.75rem;
+        opacity: 0.8;
+        margin-bottom: 5px;
+    }
+
+    .today-info .date-value {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    /* Calendar Grid */
+    .calendar-grid {
+        padding: 20px;
+    }
+
+    .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+
+    .weekday {
+        text-align: center;
+        padding: 10px 5px;
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .weekday.weekend {
+        color: #dc3545;
+    }
+
+    .calendar-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        min-height: 60px;
+    }
+
+    .calendar-day:hover {
+        background: #f0f7ff;
+    }
+
+    .calendar-day.other-month {
+        opacity: 0.4;
+    }
+
+    .calendar-day.today {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        color: #fff;
+    }
+
+    .calendar-day.today:hover {
+        background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
+    }
+
+    .calendar-day.weekend {
+        background: #fff5f5;
+    }
+
+    .calendar-day.weekend:not(.today):hover {
+        background: #ffecec;
+    }
+
+    .calendar-day .gregorian-day {
+        font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    .calendar-day .hijri-day {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-top: 2px;
+    }
+
+    .calendar-day.today .hijri-day {
+        opacity: 0.9;
+    }
+
+    /* Date Converter */
+    .date-converter {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        padding: 20px;
+    }
+
+    .converter-result {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+        display: none;
+    }
+
+    .converter-result.show {
+        display: block;
+    }
+
+    /* Hijri Months Reference */
+    .hijri-months-ref {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        padding: 20px;
+    }
+
+    .hijri-months-ref .month-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .hijri-months-ref .month-item:last-child {
+        border-bottom: none;
+    }
+
+    .month-number {
+        background: #e9ecef;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+</style>
+
+<div class="mb-4">
+    <h2 class="mb-1"><i class="bi bi-calendar3 me-2"></i>التقويم</h2>
+    <p class="text-muted">عرض التقويم الميلادي والهجري</p>
+</div>
+
+<div class="row g-4">
+    <!-- Main Calendar -->
+    <div class="col-lg-8">
+        <div class="calendar-container">
+            <!-- Calendar Header -->
+            <div class="calendar-header">
+                <div class="calendar-nav">
+                    @if (Model.UseHijriNavigation)
+                    {
+                        <a href="@Url.Action("Hijri", new { hijriYear = prevYear, hijriMonth = prevMonth })" class="btn">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("Index", new { year = prevYear, month = prevMonth })" class="btn">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    }
+
+                    <div class="calendar-title">
+                        <div class="gregorian">@Model.CurrentMonth.GregorianMonthName @Model.CurrentMonth.GregorianYear</div>
+                        <div class="hijri">@Model.CurrentMonth.HijriMonthNameArabic @Model.CurrentMonth.HijriYear هـ</div>
+                    </div>
+
+                    @if (Model.UseHijriNavigation)
+                    {
+                        <a href="@Url.Action("Hijri", new { hijriYear = nextYear, hijriMonth = nextMonth })" class="btn">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("Index", new { year = nextYear, month = nextMonth })" class="btn">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    }
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="calendar-mode-toggle">
+                        <a href="@Url.Action("Index")" class="btn @(!Model.UseHijriNavigation ? "active" : "")">ميلادي</a>
+                        <a href="@Url.Action("Hijri")" class="btn @(Model.UseHijriNavigation ? "active" : "")">هجري</a>
+                    </div>
+                    <a href="@(Model.UseHijriNavigation ? Url.Action("Hijri") : Url.Action("Index"))" class="btn">
+                        <i class="bi bi-calendar-check me-1"></i>اليوم
+                    </a>
+                </div>
+
+                <div class="today-info">
+                    <div class="date-display">
+                        <div class="date-item">
+                            <div class="date-label">التاريخ الميلادي</div>
+                            <div class="date-value">@Model.Today.GregorianFormatted</div>
+                        </div>
+                        <div class="date-item">
+                            <div class="date-label">التاريخ الهجري</div>
+                            <div class="date-value">@Model.Today.HijriDate.FormattedDateArabic</div>
+                        </div>
+                        <div class="date-item">
+                            <div class="date-label">اليوم</div>
+                            <div class="date-value">@Model.Today.HijriDate.DayNameArabic</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="calendar-grid">
+                <!-- Weekday Headers -->
+                <div class="calendar-weekdays">
+                    <div class="weekday weekend">السبت</div>
+                    <div class="weekday">الأحد</div>
+                    <div class="weekday">الاثنين</div>
+                    <div class="weekday">الثلاثاء</div>
+                    <div class="weekday">الأربعاء</div>
+                    <div class="weekday">الخميس</div>
+                    <div class="weekday weekend">الجمعة</div>
+                </div>
+
+                <!-- Days Grid -->
+                <div class="calendar-days">
+                    @foreach (var day in Model.CurrentMonth.Days)
+                    {
+                        var classes = new List<string> { "calendar-day" };
+                        if (!day.IsCurrentMonth) classes.Add("other-month");
+                        if (day.IsToday) classes.Add("today");
+                        if (day.IsWeekend) classes.Add("weekend");
+
+                        <div class="@string.Join(" ", classes)"
+                             data-date="@day.GregorianDate.ToString("yyyy-MM-dd")"
+                             data-hijri-year="@day.HijriYear"
+                             data-hijri-month="@day.HijriMonth"
+                             data-hijri-day="@day.HijriDay">
+                            <span class="gregorian-day">@day.GregorianDay</span>
+                            <span class="hijri-day">@day.HijriDay</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Date Converter -->
+        <div class="date-converter mb-4">
+            <h5 class="mb-3"><i class="bi bi-arrow-left-right me-2"></i>تحويل التاريخ</h5>
+
+            <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#gregorianToHijri">ميلادي ← هجري</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#hijriToGregorian">هجري ← ميلادي</button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Gregorian to Hijri -->
+                <div class="tab-pane fade show active" id="gregorianToHijri">
+                    <div class="mb-3">
+                        <label class="form-label">التاريخ الميلادي</label>
+                        <input type="date" class="form-control" id="gregorianDate">
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="convertToHijri()">
+                        <i class="bi bi-arrow-left-right me-1"></i>تحويل
+                    </button>
+                    <div class="converter-result" id="hijriResult">
+                        <div class="text-center">
+                            <div class="text-muted mb-1">التاريخ الهجري</div>
+                            <div class="h5 mb-0" id="hijriResultText"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hijri to Gregorian -->
+                <div class="tab-pane fade" id="hijriToGregorian">
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label">اليوم</label>
+                            <input type="number" class="form-control" id="hijriDay" min="1" max="30" placeholder="1">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">الشهر</label>
+                            <select class="form-select" id="hijriMonth">
+                                <option value="1">محرم</option>
+                                <option value="2">صفر</option>
+                                <option value="3">ربيع الأول</option>
+                                <option value="4">ربيع الثاني</option>
+                                <option value="5">جمادى الأولى</option>
+                                <option value="6">جمادى الآخرة</option>
+                                <option value="7">رجب</option>
+                                <option value="8">شعبان</option>
+                                <option value="9">رمضان</option>
+                                <option value="10">شوال</option>
+                                <option value="11">ذو القعدة</option>
+                                <option value="12">ذو الحجة</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">السنة</label>
+                            <input type="number" class="form-control" id="hijriYear" min="1318" max="1500" placeholder="@Model.Today.HijriDate.Year">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="convertToGregorian()">
+                        <i class="bi bi-arrow-left-right me-1"></i>تحويل
+                    </button>
+                    <div class="converter-result" id="gregorianResult">
+                        <div class="text-center">
+                            <div class="text-muted mb-1">التاريخ الميلادي</div>
+                            <div class="h5 mb-0" id="gregorianResultText"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hijri Months Reference -->
+        <div class="hijri-months-ref">
+            <h5 class="mb-3"><i class="bi bi-calendar-month me-2"></i>الأشهر الهجرية</h5>
+            <div class="month-item">
+                <span class="month-number">1</span>
+                <span>محرم</span>
+                <span class="text-muted">Muharram</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">2</span>
+                <span>صفر</span>
+                <span class="text-muted">Safar</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">3</span>
+                <span>ربيع الأول</span>
+                <span class="text-muted">Rabi' I</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">4</span>
+                <span>ربيع الثاني</span>
+                <span class="text-muted">Rabi' II</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">5</span>
+                <span>جمادى الأولى</span>
+                <span class="text-muted">Jumada I</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">6</span>
+                <span>جمادى الآخرة</span>
+                <span class="text-muted">Jumada II</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">7</span>
+                <span>رجب</span>
+                <span class="text-muted">Rajab</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">8</span>
+                <span>شعبان</span>
+                <span class="text-muted">Sha'ban</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">9</span>
+                <span>رمضان</span>
+                <span class="text-muted">Ramadan</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">10</span>
+                <span>شوال</span>
+                <span class="text-muted">Shawwal</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">11</span>
+                <span>ذو القعدة</span>
+                <span class="text-muted">Dhu al-Qi'dah</span>
+            </div>
+            <div class="month-item">
+                <span class="month-number">12</span>
+                <span>ذو الحجة</span>
+                <span class="text-muted">Dhu al-Hijjah</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Convert Gregorian to Hijri
+        async function convertToHijri() {
+            const dateInput = document.getElementById('gregorianDate');
+            if (!dateInput.value) {
+                alert('الرجاء إدخال التاريخ الميلادي');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Calendar/ConvertToHijri?date=${dateInput.value}`);
+                const data = await response.json();
+
+                document.getElementById('hijriResultText').textContent = data.formattedDateArabic;
+                document.getElementById('hijriResult').classList.add('show');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('حدث خطأ أثناء التحويل');
+            }
+        }
+
+        // Convert Hijri to Gregorian
+        async function convertToGregorian() {
+            const day = document.getElementById('hijriDay').value;
+            const month = document.getElementById('hijriMonth').value;
+            const year = document.getElementById('hijriYear').value;
+
+            if (!day || !month || !year) {
+                alert('الرجاء إدخال التاريخ الهجري كاملاً');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Calendar/ConvertToGregorian?year=${year}&month=${month}&day=${day}`);
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(error.error || 'تاريخ غير صالح');
+                    return;
+                }
+
+                const data = await response.json();
+                document.getElementById('gregorianResultText').textContent = data.display;
+                document.getElementById('gregorianResult').classList.add('show');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('حدث خطأ أثناء التحويل');
+            }
+        }
+
+        // Day click handler
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            day.addEventListener('click', async function () {
+                const date = this.dataset.date;
+                const hijriYear = this.dataset.hijriYear;
+                const hijriMonth = this.dataset.hijriMonth;
+                const hijriDay = this.dataset.hijriDay;
+
+                // Highlight selected day
+                document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+                this.classList.add('selected');
+
+                // Optional: Show details or navigate
+                console.log(`Selected: ${date} | Hijri: ${hijriDay}/${hijriMonth}/${hijriYear}`);
+            });
+        });
+
+        // Set default values for converter
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            document.getElementById('gregorianDate').value = today.toISOString().split('T')[0];
+            document.getElementById('hijriYear').value = @Model.Today.HijriDate.Year;
+            document.getElementById('hijriMonth').value = @Model.Today.HijriDate.Month;
+            document.getElementById('hijriDay').value = @Model.Today.HijriDate.Day;
+        });
+    </script>
+}

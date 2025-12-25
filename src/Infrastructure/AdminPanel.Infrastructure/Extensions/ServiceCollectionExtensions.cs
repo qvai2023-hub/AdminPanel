@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPermissionService, PermissionService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddSingleton<ICalendarService, CalendarService>();
 
         return services;
     }

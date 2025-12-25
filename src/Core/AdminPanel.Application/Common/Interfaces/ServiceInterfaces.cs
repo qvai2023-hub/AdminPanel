@@ -1,5 +1,6 @@
 ﻿using AdminPanel.Application.Common.Models;
 using AdminPanel.Application.Features.Auth.DTOs;
+using AdminPanel.Application.Features.Calendar.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
 using AdminPanel.Application.Features.Roles.DTOs;
 using AdminPanel.Application.Features.Users.DTOs;
@@ -105,4 +106,30 @@ public interface IPasswordHasher
 {
     string HashPassword(string password);
     bool VerifyPassword(string password, string hash);
+}
+
+public interface ICalendarService
+{
+    // Hijri Date Conversion
+    HijriDateDto ConvertToHijri(DateTime gregorianDate);
+    DateTime ConvertToGregorian(int hijriYear, int hijriMonth, int hijriDay);
+    DualDateDto GetDualDate(DateTime gregorianDate);
+
+    // Calendar Month Data
+    CalendarMonthDto GetMonthData(int year, int month);
+    CalendarMonthDto GetHijriMonthData(int hijriYear, int hijriMonth);
+
+    // Hijri Month Names
+    string GetHijriMonthName(int month, bool arabic = true);
+    string GetHijriDayName(DayOfWeek dayOfWeek, bool arabic = true);
+
+    // Date Range
+    List<DualDateDto> GetDateRange(DateTime startDate, DateTime endDate);
+
+    // Today's Date
+    DualDateDto GetToday();
+
+    // Validation
+    bool IsValidHijriDate(int year, int month, int day);
+    int GetDaysInHijriMonth(int year, int month);
 }

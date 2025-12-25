@@ -1,4 +1,5 @@
 using AdminPanel.Application.Common.Models;
+using AdminPanel.Application.Features.Calendar.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
 using AdminPanel.Application.Features.Roles.DTOs;
 using AdminPanel.Application.Features.Users.DTOs;
@@ -203,4 +204,17 @@ public class ErrorViewModel
     public string? RequestId { get; set; }
     public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
     public string? Message { get; set; }
+}
+
+// Calendar
+public class CalendarViewModel
+{
+    public DualDateDto Today { get; set; } = new();
+    public CalendarMonthDto CurrentMonth { get; set; } = new();
+    public CalendarSettingsDto Settings { get; set; } = new();
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public int? HijriYear { get; set; }
+    public int? HijriMonth { get; set; }
+    public bool UseHijriNavigation { get; set; }
 }

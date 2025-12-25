@@ -1,6 +1,7 @@
 using AdminPanel.Application.Common.Interfaces;
 using AdminPanel.Application.Common.Models;
 using AdminPanel.Application.Features.Auth.DTOs;
+using AdminPanel.Application.Features.Calendar.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
 using AdminPanel.Application.Features.Roles.DTOs;
 using AdminPanel.Application.Features.Users.DTOs;
@@ -736,6 +737,182 @@ public class ProfileController : BaseController
 
         SetSuccessMessage("تم تغيير كلمة المرور بنجاح");
         return RedirectToAction(nameof(Index));
+    }
+}
+#endregion
+
+#region Calendar Controller
+[Authorize]
+public class CalendarController : BaseController
+{
+    private readonly ICalendarService _calendarService;
+
+    public CalendarController(ICalendarService calendarService)
+    {
+        _calendarService = calendarService;
+    }
+
+    /// <summary>
+    /// Calendar main view with Gregorian navigation
+    /// </summary>
+    public IActionResult Index(int? year, int? month)
+    {
+        var today = DateTime.Today;
+        var targetYear = year ?? today.Year;
+        var targetMonth = month ?? today.Month;
+
+        // Ensure valid month
+        if (targetMonth < 1) { targetMonth = 12; targetYear--; }
+        if (targetMonth > 12) { targetMonth = 1; targetYear++; }
+
+        var viewModel = new CalendarViewModel
+        {
+            Today = _calendarService.GetToday(),
+            CurrentMonth = _calendarService.GetMonthData(targetYear, targetMonth),
+            Year = targetYear,
+            Month = targetMonth,
+            UseHijriNavigation = false,
+            Settings = new CalendarSettingsDto
+            {
+                ShowHijri = true,
+                ShowGregorian = true,
+                Locale = "ar",
+                Direction = "rtl",
+                FirstDayOfWeek = 6 // Saturday
+            }
+        };
+
+        return View(viewModel);
+    }
+
+    /// <summary>
+    /// Calendar view with Hijri navigation
+    /// </summary>
+    public IActionResult Hijri(int? hijriYear, int? hijriMonth)
+    {
+        var todayHijri = _calendarService.GetToday().HijriDate;
+        var targetYear = hijriYear ?? todayHijri.Year;
+        var targetMonth = hijriMonth ?? todayHijri.Month;
+
+        // Ensure valid month
+        if (targetMonth < 1) { targetMonth = 12; targetYear--; }
+        if (targetMonth > 12) { targetMonth = 1; targetYear++; }
+
+        var viewModel = new CalendarViewModel
+        {
+            Today = _calendarService.GetToday(),
+            CurrentMonth = _calendarService.GetHijriMonthData(targetYear, targetMonth),
+            HijriYear = targetYear,
+            HijriMonth = targetMonth,
+            UseHijriNavigation = true,
+            Settings = new CalendarSettingsDto
+            {
+                ShowHijri = true,
+                ShowGregorian = true,
+                Locale = "ar",
+                Direction = "rtl",
+                FirstDayOfWeek = 6
+            }
+        };
+
+        return View("Index", viewModel);
+    }
+
+    /// <summary>
+    /// API: Convert Gregorian to Hijri
+    /// </summary>
+    [HttpGet]
+    public IActionResult ConvertToHijri(DateTime date)
+    {
+        var hijri = _calendarService.ConvertToHijri(date);
+        return Json(hijri);
+    }
+
+    /// <summary>
+    /// API: Convert Hijri to Gregorian
+    /// </summary>
+    [HttpGet]
+    public IActionResult ConvertToGregorian(int year, int month, int day)
+    {
+        if (!_calendarService.IsValidHijriDate(year, month, day))
+        {
+            return BadRequest(new { error = "تاريخ هجري غير صالح" });
+        }
+
+        var gregorian = _calendarService.ConvertToGregorian(year, month, day);
+        return Json(new
+        {
+            date = gregorian,
+            formatted = gregorian.ToString("yyyy-MM-dd"),
+            display = gregorian.ToString("dd MMMM yyyy")
+        });
+    }
+
+    /// <summary>
+    /// API: Get dual date information
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetDualDate(DateTime? date)
+    {
+        var targetDate = date ?? DateTime.Today;
+        var dualDate = _calendarService.GetDualDate(targetDate);
+        return Json(dualDate);
+    }
+
+    /// <summary>
+    /// API: Get month data (Gregorian)
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetMonthData(int year, int month)
+    {
+        var monthData = _calendarService.GetMonthData(year, month);
+        return Json(monthData);
+    }
+
+    /// <summary>
+    /// API: Get month data (Hijri)
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetHijriMonthData(int year, int month)
+    {
+        var monthData = _calendarService.GetHijriMonthData(year, month);
+        return Json(monthData);
+    }
+
+    /// <summary>
+    /// API: Get today's date
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetToday()
+    {
+        return Json(_calendarService.GetToday());
+    }
+
+    /// <summary>
+    /// API: Get Hijri month names
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetHijriMonthNames(bool arabic = true)
+    {
+        var months = Enumerable.Range(1, 12)
+            .Select(m => new
+            {
+                number = m,
+                name = _calendarService.GetHijriMonthName(m, arabic)
+            })
+            .ToList();
+        return Json(months);
+    }
+
+    /// <summary>
+    /// API: Validate Hijri date
+    /// </summary>
+    [HttpGet]
+    public IActionResult ValidateHijriDate(int year, int month, int day)
+    {
+        var isValid = _calendarService.IsValidHijriDate(year, month, day);
+        var daysInMonth = isValid ? _calendarService.GetDaysInHijriMonth(year, month) : 0;
+        return Json(new { isValid, daysInMonth });
     }
 }
 #endregion
