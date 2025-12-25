@@ -1,4 +1,5 @@
 using AdminPanel.Application.Common.Models;
+using AdminPanel.Application.Features.Actions.DTOs;
 using AdminPanel.Application.Features.Calendar.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
 using AdminPanel.Application.Features.Roles.DTOs;
@@ -217,4 +218,58 @@ public class CalendarViewModel
     public int? HijriYear { get; set; }
     public int? HijriMonth { get; set; }
     public bool UseHijriNavigation { get; set; }
+}
+
+// Actions
+public class ActionsViewModel
+{
+    public PaginatedList<ActionListDto> Actions { get; set; } = null!;
+    public ActionFilterDto Filter { get; set; } = new();
+}
+
+public class CreateActionViewModel
+{
+    [Required(ErrorMessage = "الاسم بالعربي مطلوب")]
+    [Display(Name = "الاسم بالعربي")]
+    public string NameAr { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "الاسم بالإنجليزي مطلوب")]
+    [Display(Name = "الاسم بالإنجليزي")]
+    public string NameEn { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "الكود مطلوب")]
+    [Display(Name = "الكود")]
+    public string Code { get; set; } = string.Empty;
+
+    [Display(Name = "الأيقونة")]
+    public string? Icon { get; set; }
+
+    [Display(Name = "الترتيب")]
+    public int DisplayOrder { get; set; }
+}
+
+public class EditActionViewModel
+{
+    public int Id { get; set; }
+
+    [Required(ErrorMessage = "الاسم بالعربي مطلوب")]
+    [Display(Name = "الاسم بالعربي")]
+    public string NameAr { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "الاسم بالإنجليزي مطلوب")]
+    [Display(Name = "الاسم بالإنجليزي")]
+    public string NameEn { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "الكود مطلوب")]
+    [Display(Name = "الكود")]
+    public string Code { get; set; } = string.Empty;
+
+    [Display(Name = "الأيقونة")]
+    public string? Icon { get; set; }
+
+    [Display(Name = "الترتيب")]
+    public int DisplayOrder { get; set; }
+
+    [Display(Name = "نشط")]
+    public bool IsActive { get; set; }
 }

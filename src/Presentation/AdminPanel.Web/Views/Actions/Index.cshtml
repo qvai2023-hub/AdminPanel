@@ -1,0 +1,197 @@
+@model ActionsViewModel
+@{
+    ViewData["Title"] = "إدارة الإجراءات";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-gear me-2"></i>إدارة الإجراءات</h2>
+        <p class="text-muted mb-0">إجمالي @Model.Actions.TotalCount إجراء</p>
+    </div>
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>إضافة إجراء
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card table-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">بحث</label>
+                <input type="text" name="SearchTerm" class="form-control" placeholder="اسم أو كود..." value="@Model.Filter.SearchTerm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">الحالة</label>
+                <select name="IsActive" class="form-select">
+                    <option value="">كل الحالات</option>
+                    <option value="true" selected="@(Model.Filter.IsActive == true ? "selected" : null)">نشط</option>
+                    <option value="false" selected="@(Model.Filter.IsActive == false ? "selected" : null)">غير نشط</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">عدد</label>
+                <select name="PageSize" class="form-select">
+                    <option value="10" selected="@(Model.Filter.PageSize == 10 ? "selected" : null)">10</option>
+                    <option value="25" selected="@(Model.Filter.PageSize == 25 ? "selected" : null)">25</option>
+                    <option value="50" selected="@(Model.Filter.PageSize == 50 ? "selected" : null)">50</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i>بحث
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>عرض الكل
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Actions Table -->
+<div class="card table-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الاسم (عربي)</th>
+                        <th>Name (English)</th>
+                        <th>الكود</th>
+                        <th>الأيقونة</th>
+                        <th>الترتيب</th>
+                        <th>الحالة</th>
+                        <th style="width: 150px;">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Actions.Items.Any())
+                    {
+                        @foreach (var action in Model.Actions.Items)
+                        {
+                            <tr>
+                                <td>@action.Id</td>
+                                <td>
+                                    <strong>@action.NameAr</strong>
+                                </td>
+                                <td>@action.NameEn</td>
+                                <td>
+                                    <code class="bg-light px-2 py-1 rounded">@action.Code</code>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(action.Icon))
+                                    {
+                                        <i class="bi bi-@action.Icon fs-5"></i>
+                                        <small class="text-muted ms-1">@action.Icon</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>@action.DisplayOrder</td>
+                                <td>
+                                    @if (action.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">غير نشط</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Edit", new { id = action.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="ToggleStatus" asp-route-id="@action.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="@(action.IsActive ? "تعطيل" : "تفعيل")">
+                                                <i class="bi bi-@(action.IsActive ? "pause" : "play")"></i>
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@action.Id, '@action.NameAr')" title="حذف">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                <span class="text-muted">لا يوجد إجراءات</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (Model.Actions.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination mb-0 justify-content-center">
+                    <li class="page-item @(Model.Actions.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Filter.PageNumber - 1, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive })">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= Model.Actions.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.Filter.PageNumber ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive })">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.Actions.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Filter.PageNumber + 1, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive })">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>هل أنت متأكد من حذف الإجراء: <strong id="actionNameToDelete"></strong>؟</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <form id="deleteForm" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">حذف</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id, name) {
+            document.getElementById('actionNameToDelete').textContent = name;
+            document.getElementById('deleteForm').action = '/Actions/Delete/' + id;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
+}

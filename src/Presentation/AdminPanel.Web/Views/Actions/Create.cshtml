@@ -1,0 +1,52 @@
+@model CreateActionViewModel
+@{
+    ViewData["Title"] = "إضافة إجراء جديد";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-plus-circle me-2"></i>إضافة إجراء جديد</h2>
+        <p class="text-muted mb-0">إنشاء إجراء جديد في النظام</p>
+    </div>
+    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>رجوع
+    </a>
+</div>
+
+<div class="card table-card">
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            @await Html.PartialAsync("_Form", Model)
+
+            <hr />
+            <div class="d-flex justify-content-end gap-2">
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i>إلغاء
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle me-1"></i>حفظ
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        // Icon preview functionality
+        document.getElementById('iconInput')?.addEventListener('input', function() {
+            var iconName = this.value.trim();
+            var iconDisplay = document.getElementById('iconDisplay');
+
+            if (iconName) {
+                iconDisplay.className = 'bi bi-' + iconName;
+            } else {
+                iconDisplay.className = 'bi bi-question-circle';
+            }
+        });
+    </script>
+}
