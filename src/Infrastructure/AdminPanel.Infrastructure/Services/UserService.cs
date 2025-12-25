@@ -65,7 +65,10 @@ public class UserService : IUserService
 
     public async Task<Result<PaginatedList<UserListDto>>> GetPagedAsync(UserFilterDto filter, CancellationToken cancellationToken = default)
     {
-        IQueryable<User> query = _context.Users.AsNoTracking();
+        IQueryable<User> query = _context.Users
+            .AsNoTracking()
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role);
 
         // Filtering
         if (!string.IsNullOrEmpty(filter.SearchTerm))
@@ -93,13 +96,11 @@ public class UserService : IUserService
 
         var users = await query
             .OrderByDescending(u => u.Id)
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
             .ToListAsync(cancellationToken);
 
         var pagedUsers = users
-            .Skip((filter.PageNumber - 1) * filter.PageSize)
-            .Take(filter.PageSize)
             .Select(u => new UserListDto
             {
                 Id = u.Id,
