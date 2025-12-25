@@ -42,10 +42,8 @@ public class ActionService : IActionService
         // Get total count
         var totalCount = await query.CountAsync(cancellationToken);
 
-        // Apply pagination
-        var items = await query
-            .Skip((filter.PageNumber - 1) * filter.PageSize)
-            .Take(filter.PageSize)
+        // SQL Server 2008 compatible: Load all then paginate in memory
+        var allItems = await query
             .Select(a => new ActionListDto
             {
                 Id = a.Id,
@@ -57,6 +55,12 @@ public class ActionService : IActionService
                 IsActive = a.IsActive
             })
             .ToListAsync(cancellationToken);
+
+        // Paginate in memory (no OFFSET/FETCH for SQL 2008)
+        var items = allItems
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .ToList();
 
         var result = new PaginatedList<ActionListDto>(items, totalCount, filter.PageNumber, filter.PageSize);
         return Result<PaginatedList<ActionListDto>>.Success(result);

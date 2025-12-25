@@ -96,13 +96,17 @@ public class UserService : IUserService
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        // Get paginated IDs first (simpler query)
-        var userIds = await query
+        // SQL Server 2008 compatible: Get all IDs then paginate in memory
+        var allUserIds = await query
             .OrderByDescending(u => u.Id)
             .Select(u => u.Id)
+            .ToListAsync(cancellationToken);
+
+        // Paginate in memory (no OFFSET/FETCH for SQL 2008 compatibility)
+        var userIds = allUserIds
             .Skip((filter.PageNumber - 1) * filter.PageSize)
             .Take(filter.PageSize)
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         // Then load full user data with includes for those IDs
         var users = await _context.Users

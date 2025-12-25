@@ -63,10 +63,13 @@ public class RoleService : IRoleService
             : query.OrderBy(r => r.Name);
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
+
+        // SQL Server 2008 compatible: Load all then paginate in memory
+        var allItems = await query.ToListAsync(cancellationToken);
+        var items = allItems
             .Skip((pagination.PageNumber - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         var dtos = _mapper.Map<List<RoleListDto>>(items);
         var result = new PaginatedList<RoleListDto>(dtos, totalCount, pagination.PageNumber, pagination.PageSize);
