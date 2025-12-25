@@ -1,0 +1,211 @@
+@model UsersViewModel
+@{
+    ViewData["Title"] = "إدارة المستخدمين";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-people me-2"></i>إدارة المستخدمين</h2>
+        <p class="text-muted mb-0">إجمالي @Model.Users.TotalCount مستخدم</p>
+    </div>
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>إضافة مستخدم
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card table-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="SearchTerm" class="form-control" placeholder="بحث..." value="@Model.Filter.SearchTerm" />
+            </div>
+            <div class="col-md-2">
+                <select name="IsActive" class="form-select">
+                    <option value="">كل الحالات</option>
+                    <option value="true" selected="@(Model.Filter.IsActive == true)">نشط</option>
+                    <option value="false" selected="@(Model.Filter.IsActive == false)">غير نشط</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="RoleId" class="form-select">
+                    <option value="">كل الأدوار</option>
+                    @foreach (var role in Model.AvailableRoles)
+                    {
+                        <option value="@role.Id" selected="@(Model.Filter.RoleId == role.Id)">@role.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="PageSize" class="form-select">
+                    <option value="10" selected="@(Model.Filter.PageSize == 10)">10</option>
+                    <option value="25" selected="@(Model.Filter.PageSize == 25)">25</option>
+                    <option value="50" selected="@(Model.Filter.PageSize == 50)">50</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-search me-1"></i>بحث
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card table-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المستخدم</th>
+                        <th>البريد الإلكتروني</th>
+                        <th>الأدوار</th>
+                        <th>آخر دخول</th>
+                        <th>الحالة</th>
+                        <th style="width: 150px;">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Users.Items.Any())
+                    {
+                        @foreach (var user in Model.Users.Items)
+                        {
+                            <tr>
+                                <td>@user.Id</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width:40px;height:40px;font-weight:bold;">
+                                            @user.FullName.FirstOrDefault()
+                                        </div>
+                                        <div>
+                                            <strong>@user.FullName</strong>
+                                            <br><small class="text-muted">@@@user.Username</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@user.Email</td>
+                                <td>
+                                    @foreach (var role in user.Roles)
+                                    {
+                                        <span class="badge bg-secondary me-1">@role</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.LastLoginAt.HasValue)
+                                    {
+                                        <span title="@user.LastLoginAt.Value.ToString("yyyy-MM-dd HH:mm")">
+                                            @user.LastLoginAt.Value.ToString("yyyy-MM-dd")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">غير نشط</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Edit", new { id = user.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="ToggleStatus" asp-route-id="@user.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="@(user.IsActive ? "تعطيل" : "تفعيل")">
+                                                <i class="bi bi-@(user.IsActive ? "pause" : "play")"></i>
+                                            </button>
+                                        </form>
+                                        <a href="@Url.Action("ResetPassword", new { id = user.Id })" class="btn btn-sm btn-outline-info" title="إعادة تعيين كلمة المرور">
+                                            <i class="bi bi-key"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@user.Id, '@user.Username')" title="حذف">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                <span class="text-muted">لا يوجد مستخدمين</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    @if (Model.Users.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination mb-0 justify-content-center">
+                    <li class="page-item @(Model.Users.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Filter.PageNumber - 1, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive, Model.Filter.RoleId })">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= Model.Users.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.Filter.PageNumber ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive, Model.Filter.RoleId })">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.Users.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Filter.PageNumber + 1, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive, Model.Filter.RoleId })">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>هل أنت متأكد من حذف المستخدم: <strong id="usernameToDelete"></strong>؟</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <form id="deleteForm" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">حذف</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id, username) {
+            document.getElementById('usernameToDelete').textContent = username;
+            document.getElementById('deleteForm').action = '@Url.Action("Delete")/' + id;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
+}
