@@ -1,5 +1,6 @@
 using AdminPanel.Application.Common.Interfaces;
 using AdminPanel.Application.Common.Models;
+using AdminPanel.Application.Features.Actions.DTOs;
 using AdminPanel.Application.Features.Auth.DTOs;
 using AdminPanel.Application.Features.Calendar.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
@@ -913,6 +914,159 @@ public class CalendarController : BaseController
         var isValid = _calendarService.IsValidHijriDate(year, month, day);
         var daysInMonth = isValid ? _calendarService.GetDaysInHijriMonth(year, month) : 0;
         return Json(new { isValid, daysInMonth });
+    }
+}
+#endregion
+
+#region Actions Controller
+[Authorize]
+public class ActionsController : BaseController
+{
+    private readonly IActionService _actionService;
+
+    public ActionsController(IActionService actionService)
+    {
+        _actionService = actionService;
+    }
+
+    public async Task<IActionResult> Index(ActionFilterDto filter)
+    {
+        filter.PageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
+        filter.PageSize = filter.PageSize < 1 ? 10 : filter.PageSize;
+
+        var result = await _actionService.GetPagedAsync(filter);
+
+        var viewModel = new ActionsViewModel
+        {
+            Actions = result.IsSuccess ? result.Data! : new PaginatedList<ActionListDto>(new List<ActionListDto>(), 0, 1, 10),
+            Filter = filter
+        };
+
+        return View(viewModel);
+    }
+
+    [HttpGet]
+    public IActionResult Create()
+    {
+        return View(new CreateActionViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(CreateActionViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        // Check if code is unique
+        if (!await _actionService.IsCodeUniqueAsync(model.Code))
+        {
+            ModelState.AddModelError("Code", "كود الإجراء مستخدم مسبقاً");
+            return View(model);
+        }
+
+        var result = await _actionService.CreateAsync(new CreateActionDto
+        {
+            NameAr = model.NameAr,
+            NameEn = model.NameEn,
+            Code = model.Code,
+            Icon = model.Icon,
+            DisplayOrder = model.DisplayOrder
+        });
+
+        if (result.IsFailure)
+        {
+            ModelState.AddModelError("", result.Errors.FirstOrDefault() ?? "خطأ في إنشاء الإجراء");
+            return View(model);
+        }
+
+        SetSuccessMessage("تم إنشاء الإجراء بنجاح");
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var result = await _actionService.GetByIdAsync(id);
+        if (result.IsFailure)
+        {
+            SetErrorMessage("الإجراء غير موجود");
+            return RedirectToAction(nameof(Index));
+        }
+
+        var action = result.Data!;
+        return View(new EditActionViewModel
+        {
+            Id = action.Id,
+            NameAr = action.NameAr,
+            NameEn = action.NameEn,
+            Code = action.Code,
+            Icon = action.Icon,
+            DisplayOrder = action.DisplayOrder,
+            IsActive = action.IsActive
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, EditActionViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        // Check if code is unique (exclude current)
+        if (!await _actionService.IsCodeUniqueAsync(model.Code, id))
+        {
+            ModelState.AddModelError("Code", "كود الإجراء مستخدم مسبقاً");
+            return View(model);
+        }
+
+        var result = await _actionService.UpdateAsync(id, new UpdateActionDto
+        {
+            NameAr = model.NameAr,
+            NameEn = model.NameEn,
+            Code = model.Code,
+            Icon = model.Icon,
+            DisplayOrder = model.DisplayOrder,
+            IsActive = model.IsActive
+        });
+
+        if (result.IsFailure)
+        {
+            ModelState.AddModelError("", result.Errors.FirstOrDefault() ?? "خطأ في تحديث الإجراء");
+            return View(model);
+        }
+
+        SetSuccessMessage("تم تحديث الإجراء بنجاح");
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var result = await _actionService.DeleteAsync(id);
+
+        if (result.IsFailure)
+            SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ في حذف الإجراء");
+        else
+            SetSuccessMessage("تم حذف الإجراء بنجاح");
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleStatus(int id)
+    {
+        var result = await _actionService.ToggleStatusAsync(id);
+
+        if (result.IsFailure)
+            SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ");
+        else
+            SetSuccessMessage(result.Message ?? "تم تغيير الحالة");
+
+        return RedirectToAction(nameof(Index));
     }
 }
 #endregion

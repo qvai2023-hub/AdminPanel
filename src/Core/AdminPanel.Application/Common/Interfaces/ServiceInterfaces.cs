@@ -1,4 +1,5 @@
 ﻿using AdminPanel.Application.Common.Models;
+using AdminPanel.Application.Features.Actions.DTOs;
 using AdminPanel.Application.Features.Auth.DTOs;
 using AdminPanel.Application.Features.Calendar.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
@@ -132,4 +133,16 @@ public interface ICalendarService
     // Validation
     bool IsValidHijriDate(int year, int month, int day);
     int GetDaysInHijriMonth(int year, int month);
+}
+
+public interface IActionService
+{
+    Task<Result<PaginatedList<ActionListDto>>> GetPagedAsync(ActionFilterDto filter, CancellationToken cancellationToken = default);
+    Task<Result<ActionDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<List<ActionListDto>>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<Result<ActionDto>> CreateAsync(CreateActionDto dto, CancellationToken cancellationToken = default);
+    Task<Result<ActionDto>> UpdateAsync(int id, UpdateActionDto dto, CancellationToken cancellationToken = default);
+    Task<Result<bool>> DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<bool>> ToggleStatusAsync(int id, CancellationToken cancellationToken = default);
+    Task<bool> IsCodeUniqueAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default);
 }

@@ -31,6 +31,12 @@ public static class Messages
         public const string RoleDeleted = "تم حذف الدور بنجاح";
         public const string PermissionsAssigned = "تم تحديث الصلاحيات بنجاح";
 
+        public const string ActionCreated = "تم إنشاء الإجراء بنجاح";
+        public const string ActionUpdated = "تم تحديث الإجراء بنجاح";
+        public const string ActionDeleted = "تم حذف الإجراء بنجاح";
+        public const string ActionActivated = "تم تفعيل الإجراء بنجاح";
+        public const string ActionDeactivated = "تم تعطيل الإجراء بنجاح";
+
         public const string FileUploaded = "تم رفع الملف بنجاح";
         public const string FileDeleted = "تم حذف الملف بنجاح";
         public const string ExportSuccess = "تم التصدير بنجاح";
@@ -66,6 +72,10 @@ public static class Messages
         public const string RoleHasUsers = "لا يمكن حذف دور مرتبط بمستخدمين";
 
         public const string PermissionNotFound = "الصلاحية غير موجودة";
+
+        public const string ActionNotFound = "الإجراء غير موجود";
+        public const string ActionCodeExists = "كود الإجراء مستخدم مسبقاً";
+        public const string ActionHasPageActions = "لا يمكن حذف إجراء مرتبط بصفحات";
 
         public const string FileNotFound = "الملف غير موجود";
         public const string FileTypeNotAllowed = "نوع الملف غير مسموح به";
