@@ -1,0 +1,198 @@
+@model ProfileViewModel
+@{
+    ViewData["Title"] = "الملف الشخصي";
+}
+
+<div class="mb-4">
+    <h2 class="mb-1"><i class="bi bi-person-circle me-2"></i>الملف الشخصي</h2>
+    <p class="text-muted">عرض وإدارة معلومات حسابك</p>
+</div>
+
+<div class="row g-4">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+            <div class="card-body text-center p-4">
+                <!-- Profile Avatar -->
+                <div class="mb-4">
+                    @if (!string.IsNullOrEmpty(Model.User.ProfileImageUrl))
+                    {
+                        <img src="@Model.User.ProfileImageUrl" alt="@Model.User.FullName"
+                             class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                             style="width: 120px; height: 120px; font-size: 3rem; font-weight: 600;">
+                            @Model.User.FullName.FirstOrDefault()
+                        </div>
+                    }
+                </div>
+
+                <!-- User Name -->
+                <h4 class="mb-1">@Model.User.FullName</h4>
+                <p class="text-muted mb-3">@@@Model.User.Username</p>
+
+                <!-- Status Badge -->
+                @if (Model.User.IsActive)
+                {
+                    <span class="badge bg-success px-3 py-2">
+                        <i class="bi bi-check-circle me-1"></i>حساب نشط
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-danger px-3 py-2">
+                        <i class="bi bi-x-circle me-1"></i>حساب غير نشط
+                    </span>
+                }
+
+                <hr class="my-4">
+
+                <!-- Quick Actions -->
+                <div class="d-grid gap-2">
+                    <a href="@Url.Action("Edit")" class="btn btn-primary">
+                        <i class="bi bi-pencil me-2"></i>تعديل الملف الشخصي
+                    </a>
+                    <a href="@Url.Action("ChangePassword")" class="btn btn-outline-secondary">
+                        <i class="bi bi-key me-2"></i>تغيير كلمة المرور
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Details -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+            <div class="card-header bg-transparent border-0 p-4">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>معلومات الحساب</h5>
+            </div>
+            <div class="card-body p-4 pt-0">
+                <div class="row g-4">
+                    <!-- Username -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">اسم المستخدم</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person text-primary me-2"></i>
+                                <span class="fw-medium">@Model.User.Username</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">الاسم الكامل</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-badge text-primary me-2"></i>
+                                <span class="fw-medium">@Model.User.FullName</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">البريد الإلكتروني</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-envelope text-primary me-2"></i>
+                                <span class="fw-medium">@Model.User.Email</span>
+                                @if (Model.User.EmailConfirmed)
+                                {
+                                    <span class="badge bg-success ms-2">مُفعّل</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning ms-2">غير مُفعّل</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">رقم الهاتف</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-telephone text-primary me-2"></i>
+                                <span class="fw-medium">@(Model.User.PhoneNumber ?? "غير محدد")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Roles -->
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">الأدوار</label>
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <i class="bi bi-shield-check text-primary me-2"></i>
+                                @if (Model.User.Roles.Any())
+                                {
+                                    @foreach (var role in Model.User.Roles)
+                                    {
+                                        <span class="badge bg-primary">@role</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">لا توجد أدوار</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Created Date -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">تاريخ الإنشاء</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-calendar-plus text-primary me-2"></i>
+                                <span class="fw-medium">@Model.User.CreatedAt.ToString("dd/MM/yyyy hh:mm tt")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Last Login -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">آخر تسجيل دخول</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-clock-history text-primary me-2"></i>
+                                <span class="fw-medium">
+                                    @if (Model.User.LastLoginAt.HasValue)
+                                    {
+                                        @Model.User.LastLoginAt.Value.ToString("dd/MM/yyyy hh:mm tt")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">لم يتم تسجيل الدخول</span>
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Section -->
+        <div class="card border-0 shadow-sm mt-4" style="border-radius: 15px;">
+            <div class="card-header bg-transparent border-0 p-4">
+                <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>الأمان</h5>
+            </div>
+            <div class="card-body p-4 pt-0">
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                    <div>
+                        <h6 class="mb-1">كلمة المرور</h6>
+                        <p class="text-muted mb-0 small">قم بتغيير كلمة المرور بشكل دوري للحفاظ على أمان حسابك</p>
+                    </div>
+                    <a href="@Url.Action("ChangePassword")" class="btn btn-outline-primary">
+                        <i class="bi bi-key me-1"></i>تغيير
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
