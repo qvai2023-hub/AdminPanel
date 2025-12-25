@@ -23,8 +23,8 @@
             <div class="col-md-2">
                 <select name="IsActive" class="form-select">
                     <option value="">كل الحالات</option>
-                    <option value="true" @(Model.Filter.IsActive == true ? "selected" : "")>نشط</option>
-                    <option value="false" @(Model.Filter.IsActive == false ? "selected" : "")>غير نشط</option>
+                    <option value="true" selected="@(Model.Filter.IsActive == true ? "selected" : null)">نشط</option>
+                    <option value="false" selected="@(Model.Filter.IsActive == false ? "selected" : null)">غير نشط</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -32,15 +32,15 @@
                     <option value="">كل الأدوار</option>
                     @foreach (var role in Model.AvailableRoles)
                     {
-                        <option value="@role.Id" @(Model.Filter.RoleId == role.Id ? "selected" : "")>@role.Name</option>
+                        <option value="@role.Id" selected="@(Model.Filter.RoleId == role.Id ? "selected" : null)">@role.Name</option>
                     }
                 </select>
             </div>
             <div class="col-md-2">
                 <select name="PageSize" class="form-select">
-                    <option value="10" @(Model.Filter.PageSize == 10 ? "selected" : "")>10</option>
-                    <option value="25" @(Model.Filter.PageSize == 25 ? "selected" : "")>25</option>
-                    <option value="50" @(Model.Filter.PageSize == 50 ? "selected" : "")>50</option>
+                    <option value="10" selected="@(Model.Filter.PageSize == 10 ? "selected" : null)">10</option>
+                    <option value="25" selected="@(Model.Filter.PageSize == 25 ? "selected" : null)">25</option>
+                    <option value="50" selected="@(Model.Filter.PageSize == 50 ? "selected" : null)">50</option>
                 </select>
             </div>
             <div class="col-md-2">
