@@ -69,11 +69,8 @@ public class UserService : IUserService
         if (filter.PageNumber < 1) filter.PageNumber = 1;
         if (filter.PageSize < 1) filter.PageSize = 10;
 
-        IQueryable<User> query = _context.Users
-            .AsNoTracking()
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
-            .AsSplitQuery();
+        // Build base query without includes first for filtering
+        var query = _context.Users.AsNoTracking().AsQueryable();
 
         // Filtering
         if (!string.IsNullOrEmpty(filter.SearchTerm))
@@ -97,17 +94,27 @@ public class UserService : IUserService
         if (filter.RoleId.HasValue)
             query = query.Where(u => u.UserRoles.Any(ur => ur.RoleId == filter.RoleId.Value));
 
-        // Order first, then count and paginate
-        query = query.OrderByDescending(u => u.Id);
-
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var users = await query
+        // Get paginated IDs first (simpler query)
+        var userIds = await query
+            .OrderByDescending(u => u.Id)
+            .Select(u => u.Id)
             .Skip((filter.PageNumber - 1) * filter.PageSize)
             .Take(filter.PageSize)
             .ToListAsync(cancellationToken);
 
-        var pagedUsers = users
+        // Then load full user data with includes for those IDs
+        var users = await _context.Users
+            .AsNoTracking()
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .Where(u => userIds.Contains(u.Id))
+            .ToListAsync(cancellationToken);
+
+        // Maintain order from userIds
+        var pagedUsers = userIds
+            .Select(id => users.First(u => u.Id == id))
             .Select(u => new UserListDto
             {
                 Id = u.Id,
