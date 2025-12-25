@@ -31,6 +31,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<SystemLog> SystemLogs => Set<SystemLog>();
 
+    // New Permission System
+    public DbSet<AdminPanel.Domain.Entities.Identity.Action> Actions => Set<AdminPanel.Domain.Entities.Identity.Action>();
+    public DbSet<Page> Pages => Set<Page>();
+    public DbSet<PageAction> PageActions => Set<PageAction>();
+    public DbSet<RolePageAction> RolePageActions => Set<RolePageAction>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -103,6 +109,68 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+        });
+
+        // Action Configuration (New Permission System)
+        modelBuilder.Entity<AdminPanel.Domain.Entities.Identity.Action>(entity =>
+        {
+            entity.ToTable("Actions");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.NameAr).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.NameEn).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Icon).HasMaxLength(50);
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        // Page Configuration (New Permission System)
+        modelBuilder.Entity<Page>(entity =>
+        {
+            entity.ToTable("Pages");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Url).IsUnique();
+            entity.Property(e => e.NameAr).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.NameEn).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Url).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Icon).HasMaxLength(50);
+            entity.HasOne(e => e.Parent)
+                  .WithMany(e => e.Children)
+                  .HasForeignKey(e => e.ParentId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        // PageAction Configuration (New Permission System)
+        modelBuilder.Entity<PageAction>(entity =>
+        {
+            entity.ToTable("PageActions");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.PageId, e.ActionId }).IsUnique();
+            entity.HasOne(e => e.Page)
+                  .WithMany(p => p.PageActions)
+                  .HasForeignKey(e => e.PageId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Action)
+                  .WithMany(a => a.PageActions)
+                  .HasForeignKey(e => e.ActionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // RolePageAction Configuration (New Permission System)
+        modelBuilder.Entity<RolePageAction>(entity =>
+        {
+            entity.ToTable("RolePageActions");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.RoleId, e.PageActionId }).IsUnique();
+            entity.HasOne(e => e.Role)
+                  .WithMany(r => r.RolePageActions)
+                  .HasForeignKey(e => e.RoleId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.PageAction)
+                  .WithMany(pa => pa.RolePageActions)
+                  .HasForeignKey(e => e.PageActionId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Apply Global Tenant Filter
