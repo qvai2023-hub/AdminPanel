@@ -69,56 +69,50 @@ public class UserService : IUserService
         if (filter.PageNumber < 1) filter.PageNumber = 1;
         if (filter.PageSize < 1) filter.PageSize = 10;
 
-        // Build base query without includes first for filtering
-        var query = _context.Users.AsNoTracking().AsQueryable();
-
-        // Filtering
-        if (!string.IsNullOrEmpty(filter.SearchTerm))
-        {
-            var term = filter.SearchTerm.ToLower();
-            query = query.Where(u => u.Username.ToLower().Contains(term) ||
-                                     u.Email.ToLower().Contains(term) ||
-                                     u.FullName.ToLower().Contains(term));
-        }
-
-        if (filter.IsActive.HasValue)
-            query = query.Where(u => u.IsActive == filter.IsActive.Value);
-
-        if (filter.FromDate.HasValue)
-            query = query.Where(u => u.CreatedAt >= filter.FromDate.Value);
-
-        if (filter.ToDate.HasValue)
-            query = query.Where(u => u.CreatedAt <= filter.ToDate.Value);
-
-        // Filter by RoleId
-        if (filter.RoleId.HasValue)
-            query = query.Where(u => u.UserRoles.Any(ur => ur.RoleId == filter.RoleId.Value));
-
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        // SQL Server 2008 compatible: Get all IDs then paginate in memory
-        var allUserIds = await query
-            .OrderByDescending(u => u.Id)
-            .Select(u => u.Id)
-            .ToListAsync(cancellationToken);
-
-        // Paginate in memory (no OFFSET/FETCH for SQL 2008 compatibility)
-        var userIds = allUserIds
-            .Skip((filter.PageNumber - 1) * filter.PageSize)
-            .Take(filter.PageSize)
-            .ToList();
-
-        // Then load full user data with includes for those IDs
-        var users = await _context.Users
+        // SQL Server 2008 compatible: Load all users with roles first (no complex SQL)
+        var allUsers = await _context.Users
             .AsNoTracking()
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
-            .Where(u => userIds.Contains(u.Id))
             .ToListAsync(cancellationToken);
 
-        // Maintain order from userIds
-        var pagedUsers = userIds
-            .Select(id => users.First(u => u.Id == id))
+        // Apply all filters in memory
+        var filteredUsers = allUsers.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(filter.SearchTerm))
+        {
+            var term = filter.SearchTerm.ToLower();
+            filteredUsers = filteredUsers.Where(u =>
+                u.Username.ToLower().Contains(term) ||
+                u.Email.ToLower().Contains(term) ||
+                u.FullName.ToLower().Contains(term));
+        }
+
+        if (filter.IsActive.HasValue)
+            filteredUsers = filteredUsers.Where(u => u.IsActive == filter.IsActive.Value);
+
+        if (filter.FromDate.HasValue)
+            filteredUsers = filteredUsers.Where(u => u.CreatedAt >= filter.FromDate.Value);
+
+        if (filter.ToDate.HasValue)
+            filteredUsers = filteredUsers.Where(u => u.CreatedAt <= filter.ToDate.Value);
+
+        if (filter.RoleId.HasValue)
+            filteredUsers = filteredUsers.Where(u => u.UserRoles.Any(ur => ur.RoleId == filter.RoleId.Value));
+
+        // Apply soft delete filter
+        filteredUsers = filteredUsers.Where(u => !u.IsDeleted);
+
+        var usersList = filteredUsers
+            .OrderByDescending(u => u.Id)
+            .ToList();
+
+        var totalCount = usersList.Count;
+
+        // Paginate in memory
+        var pagedUsers = usersList
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
             .Select(u => new UserListDto
             {
                 Id = u.Id,
