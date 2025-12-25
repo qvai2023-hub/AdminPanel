@@ -30,7 +30,7 @@
                 
                 <div class="col-md-6 mb-3">
                     <label asp-for="Email" class="form-label"></label>
-                    <input asp-for="Email" class="form-control" placeholder="example@domain.com" />
+                    <input asp-for="Email" class="form-control" type="email" placeholder="example@domain.com" dir="ltr" />
                     <span asp-validation-for="Email" class="text-danger"></span>
                 </div>
             </div>
@@ -44,7 +44,7 @@
                 
                 <div class="col-md-6 mb-3">
                     <label asp-for="PhoneNumber" class="form-label"></label>
-                    <input asp-for="PhoneNumber" class="form-control" placeholder="05xxxxxxxx" />
+                    <input asp-for="PhoneNumber" class="form-control" type="tel" placeholder="05xxxxxxxx" dir="ltr" />
                     <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                 </div>
             </div>
@@ -52,13 +52,14 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label asp-for="Password" class="form-label"></label>
-                    <input asp-for="Password" class="form-control" placeholder="أدخل كلمة المرور" />
+                    <input asp-for="Password" class="form-control" type="password" placeholder="أدخل كلمة المرور" />
                     <span asp-validation-for="Password" class="text-danger"></span>
+                    <div class="form-text">6 أحرف على الأقل، حرف كبير، حرف صغير، ورقم</div>
                 </div>
-                
+
                 <div class="col-md-6 mb-3">
                     <label asp-for="ConfirmPassword" class="form-label"></label>
-                    <input asp-for="ConfirmPassword" class="form-control" placeholder="أعد إدخال كلمة المرور" />
+                    <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="أعد إدخال كلمة المرور" />
                     <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                 </div>
             </div>
@@ -96,3 +97,7 @@
         </form>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

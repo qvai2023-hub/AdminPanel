@@ -1,0 +1,22 @@
+@* jQuery Validation Scripts *@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2ez3JCW1RQIV9a9Qp39xW96P1A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js" integrity="sha512-KFHXdr2oObHKI9w4Hv1XPKc898mE4kgYx58oqsc/JqqdLMDI4YjOLzom+EMlW8HFUd0QfjfAvxSL6sEq/a42fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js" integrity="sha512-xq+Vm8jC94ynOikewaQXMEkJIOBp7iArs3IhFWSWdRT3Pq8wFz46p+ZDFAR7kHnSFf+zUv52B3prRYnbDRdgog==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script>
+    // Configure jQuery Validation for RTL/Arabic
+    $.extend($.validator.messages, {
+        required: "هذا الحقل مطلوب",
+        email: "الرجاء إدخال بريد إلكتروني صحيح",
+        url: "الرجاء إدخال رابط صحيح",
+        date: "الرجاء إدخال تاريخ صحيح",
+        number: "الرجاء إدخال رقم صحيح",
+        digits: "الرجاء إدخال أرقام فقط",
+        equalTo: "الرجاء إدخال نفس القيمة مرة أخرى",
+        maxlength: $.validator.format("الرجاء إدخال أقل من {0} حرف"),
+        minlength: $.validator.format("الرجاء إدخال أكثر من {0} حرف"),
+        range: $.validator.format("الرجاء إدخال قيمة بين {0} و {1}"),
+        max: $.validator.format("الرجاء إدخال قيمة أقل من أو تساوي {0}"),
+        min: $.validator.format("الرجاء إدخال قيمة أكبر من أو تساوي {0}")
+    });
+</script>
