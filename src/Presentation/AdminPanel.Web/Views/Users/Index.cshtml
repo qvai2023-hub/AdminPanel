@@ -16,11 +16,13 @@
 <!-- Filters -->
 <div class="card table-card mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-4">
-                <input type="text" name="SearchTerm" class="form-control" placeholder="بحث..." value="@Model.Filter.SearchTerm" />
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">بحث</label>
+                <input type="text" name="SearchTerm" class="form-control" placeholder="اسم، بريد، مستخدم..." value="@Model.Filter.SearchTerm" />
             </div>
             <div class="col-md-2">
+                <label class="form-label small text-muted">الحالة</label>
                 <select name="IsActive" class="form-select">
                     <option value="">كل الحالات</option>
                     <option value="true" selected="@(Model.Filter.IsActive == true ? "selected" : null)">نشط</option>
@@ -28,6 +30,7 @@
                 </select>
             </div>
             <div class="col-md-2">
+                <label class="form-label small text-muted">الدور</label>
                 <select name="RoleId" class="form-select">
                     <option value="">كل الأدوار</option>
                     @foreach (var role in Model.AvailableRoles)
@@ -36,7 +39,8 @@
                     }
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
+                <label class="form-label small text-muted">عدد</label>
                 <select name="PageSize" class="form-select">
                     <option value="10" selected="@(Model.Filter.PageSize == 10 ? "selected" : null)">10</option>
                     <option value="25" selected="@(Model.Filter.PageSize == 25 ? "selected" : null)">25</option>
@@ -44,9 +48,14 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-primary w-100">
+                <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-search me-1"></i>بحث
                 </button>
+            </div>
+            <div class="col-md-2">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>عرض الكل
+                </a>
             </div>
         </form>
     </div>

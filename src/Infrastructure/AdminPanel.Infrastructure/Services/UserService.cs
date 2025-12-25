@@ -85,6 +85,10 @@ public class UserService : IUserService
         if (filter.ToDate.HasValue)
             query = query.Where(u => u.CreatedAt <= filter.ToDate.Value);
 
+        // Filter by RoleId
+        if (filter.RoleId.HasValue)
+            query = query.Where(u => u.UserRoles.Any(ur => ur.RoleId == filter.RoleId.Value));
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         var users = await query
