@@ -24,7 +24,7 @@ public interface IUserService
     Task<bool> HasPermissionAsync(int userId, string permissionCode, CancellationToken cancellationToken = default);  // ✅ بدون Result
 }
 
-public interface IAuthService
+public interface IAuthService 
 {
     Task<Result<LoginResponseDto>> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default);
     Task<Result<bool>> LogoutAsync(int userId, CancellationToken cancellationToken = default);
