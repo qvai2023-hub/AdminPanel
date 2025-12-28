@@ -2,6 +2,7 @@
 using AdminPanel.Application.Features.Actions.DTOs;
 using AdminPanel.Application.Features.Auth.DTOs;
 using AdminPanel.Application.Features.Calendar.DTOs;
+using AdminPanel.Application.Features.Pages.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
 using AdminPanel.Application.Features.Roles.DTOs;
 using AdminPanel.Application.Features.Users.DTOs;
@@ -145,4 +146,20 @@ public interface IActionService
     Task<Result<bool>> DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<Result<bool>> ToggleStatusAsync(int id, CancellationToken cancellationToken = default);
     Task<bool> IsCodeUniqueAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default);
+}
+
+public interface IPageService
+{
+    Task<Result<PaginatedList<PageListDto>>> GetPagedAsync(PageFilterDto filter, CancellationToken cancellationToken = default);
+    Task<Result<PageDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<List<PageDropdownDto>>> GetAllForDropdownAsync(int? excludeId = null, CancellationToken cancellationToken = default);
+    Task<Result<List<PageDto>>> GetMenuPagesAsync(CancellationToken cancellationToken = default);
+    Task<Result<PageDto>> CreateAsync(CreatePageDto dto, CancellationToken cancellationToken = default);
+    Task<Result<PageDto>> UpdateAsync(int id, UpdatePageDto dto, CancellationToken cancellationToken = default);
+    Task<Result<bool>> DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<bool>> ToggleStatusAsync(int id, CancellationToken cancellationToken = default);
+    Task<bool> IsUrlUniqueAsync(string url, int? excludeId = null, CancellationToken cancellationToken = default);
+    Task<Result<List<ActionListDto>>> GetPageActionsAsync(int pageId, CancellationToken cancellationToken = default);
+    Task<Result<List<ActionListDto>>> GetAllActionsWithAssignmentAsync(int pageId, CancellationToken cancellationToken = default);
+    Task<Result<bool>> AssignActionsAsync(int pageId, List<int> actionIds, CancellationToken cancellationToken = default);
 }

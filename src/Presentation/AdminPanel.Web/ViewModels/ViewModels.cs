@@ -1,6 +1,7 @@
 using AdminPanel.Application.Common.Models;
 using AdminPanel.Application.Features.Actions.DTOs;
 using AdminPanel.Application.Features.Calendar.DTOs;
+using AdminPanel.Application.Features.Pages.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
 using AdminPanel.Application.Features.Roles.DTOs;
 using AdminPanel.Application.Features.Users.DTOs;
@@ -272,4 +273,84 @@ public class EditActionViewModel
 
     [Display(Name = "نشط")]
     public bool IsActive { get; set; }
+}
+
+// Pages
+public class PagesViewModel
+{
+    public PaginatedList<PageListDto> Pages { get; set; } = null!;
+    public PageFilterDto Filter { get; set; } = new();
+    public List<PageDropdownDto> ParentPages { get; set; } = new();
+}
+
+public class CreatePageViewModel
+{
+    [Required(ErrorMessage = "الاسم بالعربي مطلوب")]
+    [Display(Name = "الاسم بالعربي")]
+    public string NameAr { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "الاسم بالإنجليزي مطلوب")]
+    [Display(Name = "الاسم بالإنجليزي")]
+    public string NameEn { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "الرابط مطلوب")]
+    [Display(Name = "الرابط")]
+    public string Url { get; set; } = string.Empty;
+
+    [Display(Name = "الأيقونة")]
+    public string? Icon { get; set; }
+
+    [Display(Name = "القسم الرئيسي")]
+    public int? ParentId { get; set; }
+
+    [Display(Name = "الترتيب")]
+    public int DisplayOrder { get; set; }
+
+    [Display(Name = "عرض في القائمة")]
+    public bool IsInMenu { get; set; } = true;
+
+    public List<PageDropdownDto> ParentPages { get; set; } = new();
+}
+
+public class EditPageViewModel
+{
+    public int Id { get; set; }
+
+    [Required(ErrorMessage = "الاسم بالعربي مطلوب")]
+    [Display(Name = "الاسم بالعربي")]
+    public string NameAr { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "الاسم بالإنجليزي مطلوب")]
+    [Display(Name = "الاسم بالإنجليزي")]
+    public string NameEn { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "الرابط مطلوب")]
+    [Display(Name = "الرابط")]
+    public string Url { get; set; } = string.Empty;
+
+    [Display(Name = "الأيقونة")]
+    public string? Icon { get; set; }
+
+    [Display(Name = "القسم الرئيسي")]
+    public int? ParentId { get; set; }
+
+    [Display(Name = "الترتيب")]
+    public int DisplayOrder { get; set; }
+
+    [Display(Name = "نشط")]
+    public bool IsActive { get; set; }
+
+    [Display(Name = "عرض في القائمة")]
+    public bool IsInMenu { get; set; }
+
+    public List<PageDropdownDto> ParentPages { get; set; } = new();
+}
+
+public class PageActionsViewModel
+{
+    public int PageId { get; set; }
+    public string PageNameAr { get; set; } = string.Empty;
+    public string PageUrl { get; set; } = string.Empty;
+    public List<ActionListDto> AllActions { get; set; } = new();
+    public List<int> AssignedActionIds { get; set; } = new();
 }

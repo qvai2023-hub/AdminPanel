@@ -1,0 +1,123 @@
+@model EditPageViewModel
+@{
+    ViewData["Title"] = "تعديل الصفحة";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-pencil me-2"></i>تعديل الصفحة</h2>
+        <p class="text-muted mb-0">تعديل بيانات الصفحة: @Model.NameAr</p>
+    </div>
+    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>رجوع
+    </a>
+</div>
+
+<div class="card table-card">
+    <div class="card-body">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="NameAr" class="form-label">الاسم بالعربي <span class="text-danger">*</span></label>
+                    <input asp-for="NameAr" class="form-control" placeholder="مثال: لوحة التحكم" />
+                    <span asp-validation-for="NameAr" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="NameEn" class="form-label">الاسم بالإنجليزي <span class="text-danger">*</span></label>
+                    <input asp-for="NameEn" class="form-control" placeholder="Example: Dashboard" dir="ltr" />
+                    <span asp-validation-for="NameEn" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Url" class="form-label">الرابط <span class="text-danger">*</span></label>
+                    <input asp-for="Url" class="form-control" placeholder="/dashboard" dir="ltr" />
+                    <span asp-validation-for="Url" class="text-danger"></span>
+                    <small class="text-muted">رابط الصفحة (يبدأ بـ /)</small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ParentId" class="form-label">القسم الرئيسي</label>
+                    <select asp-for="ParentId" class="form-select">
+                        <option value="">-- بدون قسم رئيسي --</option>
+                        @foreach (var parent in Model.ParentPages.Where(p => p.ParentId == null))
+                        {
+                            <option value="@parent.Id" selected="@(Model.ParentId == parent.Id ? "selected" : null)">@parent.NameAr</option>
+                            @foreach (var child in Model.ParentPages.Where(c => c.ParentId == parent.Id))
+                            {
+                                <option value="@child.Id" selected="@(Model.ParentId == child.Id ? "selected" : null)">&nbsp;&nbsp;└ @child.NameAr</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="ParentId" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label asp-for="Icon" class="form-label">الأيقونة</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-@(string.IsNullOrEmpty(Model.Icon) ? "question-circle" : Model.Icon)" id="iconDisplay"></i>
+                        </span>
+                        <input asp-for="Icon" class="form-control" placeholder="مثال: house, folder, gear" dir="ltr" id="iconInput" />
+                    </div>
+                    <span asp-validation-for="Icon" class="text-danger"></span>
+                    <small class="text-muted">
+                        اسم الأيقونة من <a href="https://icons.getbootstrap.com/" target="_blank">Bootstrap Icons</a> (بدون bi-)
+                    </small>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label asp-for="DisplayOrder" class="form-label">الترتيب</label>
+                    <input asp-for="DisplayOrder" type="number" class="form-control" min="0" />
+                    <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label d-block">خيارات العرض</label>
+                    <div class="form-check mt-2">
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                        <label asp-for="IsActive" class="form-check-label">نشط</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="IsInMenu" class="form-check-input" type="checkbox" />
+                        <label asp-for="IsInMenu" class="form-check-label">عرض في القائمة الجانبية</label>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+            <div class="d-flex justify-content-between">
+                <a href="@Url.Action("Actions", new { id = Model.Id })" class="btn btn-info">
+                    <i class="bi bi-gear me-1"></i>إدارة الإجراءات
+                </a>
+                <div class="d-flex gap-2">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="bi bi-x-circle me-1"></i>إلغاء
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>حفظ التغييرات
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        document.getElementById('iconInput')?.addEventListener('input', function() {
+            var iconName = this.value.trim();
+            var iconDisplay = document.getElementById('iconDisplay');
+            if (iconName) {
+                iconDisplay.className = 'bi bi-' + iconName;
+            } else {
+                iconDisplay.className = 'bi bi-question-circle';
+            }
+        });
+    </script>
+}

@@ -1,0 +1,178 @@
+@model PageActionsViewModel
+@{
+    ViewData["Title"] = "إجراءات الصفحة";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-gear me-2"></i>إجراءات الصفحة</h2>
+        <p class="text-muted mb-0">
+            إدارة الإجراءات المتاحة للصفحة: <strong>@Model.PageNameAr</strong>
+            <code class="ms-2 bg-light px-2 py-1 rounded" dir="ltr">@Model.PageUrl</code>
+        </p>
+    </div>
+    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>رجوع للصفحات
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card table-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>الإجراءات المتاحة</h5>
+                <span class="badge bg-primary">@Model.AssignedActionIds.Count من @Model.AllActions.Count</span>
+            </div>
+            <div class="card-body">
+                <form asp-action="AssignActions" asp-route-id="@Model.PageId" method="post">
+                    @Html.AntiForgeryToken()
+
+                    @if (Model.AllActions.Any())
+                    {
+                        <div class="mb-3">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="selectAll" />
+                                <label class="form-check-label fw-bold" for="selectAll">تحديد الكل / إلغاء التحديد</label>
+                            </div>
+                            <hr />
+                        </div>
+
+                        <div class="row">
+                            @foreach (var action in Model.AllActions)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 @(Model.AssignedActionIds.Contains(action.Id) ? "border-primary" : "")">
+                                        <div class="card-body py-2">
+                                            <div class="form-check">
+                                                <input type="checkbox"
+                                                       class="form-check-input action-checkbox"
+                                                       name="actionIds"
+                                                       value="@action.Id"
+                                                       id="action_@action.Id"
+                                                       checked="@(Model.AssignedActionIds.Contains(action.Id) ? "checked" : null)" />
+                                                <label class="form-check-label w-100" for="action_@action.Id">
+                                                    <div class="d-flex align-items-center">
+                                                        @if (!string.IsNullOrEmpty(action.Icon))
+                                                        {
+                                                            <i class="bi bi-@action.Icon fs-4 me-2 text-primary"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi bi-circle fs-4 me-2 text-muted"></i>
+                                                        }
+                                                        <div>
+                                                            <strong>@action.NameAr</strong>
+                                                            <br />
+                                                            <small class="text-muted">@action.NameEn</small>
+                                                            <br />
+                                                            <code class="small">@action.Code</code>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <hr />
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("Edit", new { id = Model.PageId })" class="btn btn-secondary">
+                                <i class="bi bi-pencil me-1"></i>تعديل الصفحة
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>حفظ الإجراءات
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                            <span class="text-muted">لا يوجد إجراءات متاحة</span>
+                            <br />
+                            <a href="@Url.Action("Create", "Actions")" class="btn btn-primary mt-3">
+                                <i class="bi bi-plus-circle me-1"></i>إنشاء إجراء جديد
+                            </a>
+                        </div>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card table-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>معلومات</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    حدد الإجراءات التي تريد إتاحتها لهذه الصفحة. الإجراءات المحددة ستكون متاحة للأدوار عند تعيين صلاحيات الصفحة.
+                </p>
+                <hr />
+                <h6>الإجراءات المحددة:</h6>
+                <ul class="list-unstyled" id="selectedActionsList">
+                    @if (Model.AssignedActionIds.Any())
+                    {
+                        @foreach (var actionId in Model.AssignedActionIds)
+                        {
+                            var action = Model.AllActions.FirstOrDefault(a => a.Id == actionId);
+                            if (action != null)
+                            {
+                                <li class="mb-1">
+                                    <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                    @action.NameAr
+                                </li>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <li class="text-muted"><em>لم يتم تحديد أي إجراء</em></li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="card table-card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>روابط سريعة</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="@Url.Action("Edit", new { id = Model.PageId })" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>تعديل الصفحة
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="bi bi-files me-1"></i>كل الصفحات
+                    </a>
+                    <a href="@Url.Action("Index", "Actions")" class="btn btn-outline-info">
+                        <i class="bi bi-gear me-1"></i>إدارة الإجراءات
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Select all checkbox functionality
+        document.getElementById('selectAll')?.addEventListener('change', function() {
+            var checkboxes = document.querySelectorAll('.action-checkbox');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = this.checked;
+            }.bind(this));
+        });
+
+        // Update select all state based on individual checkboxes
+        document.querySelectorAll('.action-checkbox').forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                var allChecked = document.querySelectorAll('.action-checkbox:checked').length === document.querySelectorAll('.action-checkbox').length;
+                document.getElementById('selectAll').checked = allChecked;
+            });
+        });
+    </script>
+}

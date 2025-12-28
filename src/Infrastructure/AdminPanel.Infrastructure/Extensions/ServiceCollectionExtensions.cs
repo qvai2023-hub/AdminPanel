@@ -34,6 +34,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailService, EmailService>();
         services.AddSingleton<ICalendarService, CalendarService>();
         services.AddScoped<IActionService, ActionService>();
+        services.AddScoped<IPageService, PageService>();
 
         return services;
     }

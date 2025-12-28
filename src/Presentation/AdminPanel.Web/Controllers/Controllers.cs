@@ -3,6 +3,7 @@ using AdminPanel.Application.Common.Models;
 using AdminPanel.Application.Features.Actions.DTOs;
 using AdminPanel.Application.Features.Auth.DTOs;
 using AdminPanel.Application.Features.Calendar.DTOs;
+using AdminPanel.Application.Features.Pages.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
 using AdminPanel.Application.Features.Roles.DTOs;
 using AdminPanel.Application.Features.Users.DTOs;
@@ -1067,6 +1068,232 @@ public class ActionsController : BaseController
             SetSuccessMessage(result.Message ?? "تم تغيير الحالة");
 
         return RedirectToAction(nameof(Index));
+    }
+}
+#endregion
+
+#region Pages Controller
+[Authorize]
+public class PagesController : BaseController
+{
+    private readonly IPageService _pageService;
+    private readonly IActionService _actionService;
+
+    public PagesController(IPageService pageService, IActionService actionService)
+    {
+        _pageService = pageService;
+        _actionService = actionService;
+    }
+
+    public async Task<IActionResult> Index(PageFilterDto filter)
+    {
+        filter.PageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
+        filter.PageSize = filter.PageSize < 1 ? 10 : filter.PageSize;
+
+        var result = await _pageService.GetPagedAsync(filter);
+        var parentsResult = await _pageService.GetAllForDropdownAsync();
+
+        var viewModel = new PagesViewModel
+        {
+            Pages = result.IsSuccess ? result.Data! : new PaginatedList<PageListDto>(new List<PageListDto>(), 0, 1, 10),
+            Filter = filter,
+            ParentPages = parentsResult.IsSuccess ? parentsResult.Data! : new List<PageDropdownDto>()
+        };
+
+        return View(viewModel);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Create()
+    {
+        var parentsResult = await _pageService.GetAllForDropdownAsync();
+        return View(new CreatePageViewModel
+        {
+            ParentPages = parentsResult.IsSuccess ? parentsResult.Data! : new List<PageDropdownDto>()
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(CreatePageViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            var parentsResult = await _pageService.GetAllForDropdownAsync();
+            model.ParentPages = parentsResult.IsSuccess ? parentsResult.Data! : new List<PageDropdownDto>();
+            return View(model);
+        }
+
+        // Check if URL is unique
+        if (!await _pageService.IsUrlUniqueAsync(model.Url))
+        {
+            ModelState.AddModelError("Url", "رابط الصفحة مستخدم مسبقاً");
+            var parentsResult = await _pageService.GetAllForDropdownAsync();
+            model.ParentPages = parentsResult.IsSuccess ? parentsResult.Data! : new List<PageDropdownDto>();
+            return View(model);
+        }
+
+        var result = await _pageService.CreateAsync(new CreatePageDto
+        {
+            NameAr = model.NameAr,
+            NameEn = model.NameEn,
+            Url = model.Url,
+            Icon = model.Icon,
+            ParentId = model.ParentId,
+            DisplayOrder = model.DisplayOrder,
+            IsInMenu = model.IsInMenu
+        });
+
+        if (result.IsFailure)
+        {
+            ModelState.AddModelError("", result.Errors.FirstOrDefault() ?? "خطأ في إنشاء الصفحة");
+            var parentsResult = await _pageService.GetAllForDropdownAsync();
+            model.ParentPages = parentsResult.IsSuccess ? parentsResult.Data! : new List<PageDropdownDto>();
+            return View(model);
+        }
+
+        SetSuccessMessage("تم إنشاء الصفحة بنجاح");
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var result = await _pageService.GetByIdAsync(id);
+        if (result.IsFailure)
+        {
+            SetErrorMessage("الصفحة غير موجودة");
+            return RedirectToAction(nameof(Index));
+        }
+
+        var page = result.Data!;
+        var parentsResult = await _pageService.GetAllForDropdownAsync(id);
+
+        return View(new EditPageViewModel
+        {
+            Id = page.Id,
+            NameAr = page.NameAr,
+            NameEn = page.NameEn,
+            Url = page.Url,
+            Icon = page.Icon,
+            ParentId = page.ParentId,
+            DisplayOrder = page.DisplayOrder,
+            IsActive = page.IsActive,
+            IsInMenu = page.IsInMenu,
+            ParentPages = parentsResult.IsSuccess ? parentsResult.Data! : new List<PageDropdownDto>()
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, EditPageViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            var parentsResult = await _pageService.GetAllForDropdownAsync(id);
+            model.ParentPages = parentsResult.IsSuccess ? parentsResult.Data! : new List<PageDropdownDto>();
+            return View(model);
+        }
+
+        // Check if URL is unique (exclude current)
+        if (!await _pageService.IsUrlUniqueAsync(model.Url, id))
+        {
+            ModelState.AddModelError("Url", "رابط الصفحة مستخدم مسبقاً");
+            var parentsResult = await _pageService.GetAllForDropdownAsync(id);
+            model.ParentPages = parentsResult.IsSuccess ? parentsResult.Data! : new List<PageDropdownDto>();
+            return View(model);
+        }
+
+        var result = await _pageService.UpdateAsync(id, new UpdatePageDto
+        {
+            NameAr = model.NameAr,
+            NameEn = model.NameEn,
+            Url = model.Url,
+            Icon = model.Icon,
+            ParentId = model.ParentId,
+            DisplayOrder = model.DisplayOrder,
+            IsActive = model.IsActive,
+            IsInMenu = model.IsInMenu
+        });
+
+        if (result.IsFailure)
+        {
+            ModelState.AddModelError("", result.Errors.FirstOrDefault() ?? "خطأ في تحديث الصفحة");
+            var parentsResult = await _pageService.GetAllForDropdownAsync(id);
+            model.ParentPages = parentsResult.IsSuccess ? parentsResult.Data! : new List<PageDropdownDto>();
+            return View(model);
+        }
+
+        SetSuccessMessage("تم تحديث الصفحة بنجاح");
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var result = await _pageService.DeleteAsync(id);
+
+        if (result.IsFailure)
+            SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ في حذف الصفحة");
+        else
+            SetSuccessMessage("تم حذف الصفحة بنجاح");
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleStatus(int id)
+    {
+        var result = await _pageService.ToggleStatusAsync(id);
+
+        if (result.IsFailure)
+            SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ");
+        else
+            SetSuccessMessage(result.Message ?? "تم تغيير الحالة");
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Actions(int id)
+    {
+        var pageResult = await _pageService.GetByIdAsync(id);
+        if (pageResult.IsFailure)
+        {
+            SetErrorMessage("الصفحة غير موجودة");
+            return RedirectToAction(nameof(Index));
+        }
+
+        var actionsResult = await _pageService.GetAllActionsWithAssignmentAsync(id);
+
+        var viewModel = new PageActionsViewModel
+        {
+            PageId = id,
+            PageNameAr = pageResult.Data!.NameAr,
+            PageUrl = pageResult.Data.Url,
+            AllActions = actionsResult.IsSuccess ? actionsResult.Data! : new List<ActionListDto>(),
+            AssignedActionIds = actionsResult.IsSuccess
+                ? actionsResult.Data!.Where(a => a.IsActive).Select(a => a.Id).ToList()
+                : new List<int>()
+        };
+
+        return View(viewModel);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AssignActions(int id, List<int> actionIds)
+    {
+        var result = await _pageService.AssignActionsAsync(id, actionIds ?? new List<int>());
+
+        if (result.IsFailure)
+            SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ في تحديث الإجراءات");
+        else
+            SetSuccessMessage("تم تحديث إجراءات الصفحة بنجاح");
+
+        return RedirectToAction(nameof(Actions), new { id });
     }
 }
 #endregion
