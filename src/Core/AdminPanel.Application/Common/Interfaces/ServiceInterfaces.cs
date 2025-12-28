@@ -50,6 +50,10 @@ public interface IRoleService
     Task<bool> IsNameUniqueAsync(string name, int? excludeId = null, CancellationToken cancellationToken = default);
     Task<Result<bool>> AssignPermissionsAsync(int roleId, List<PermissionAssignmentDto> permissions, CancellationToken cancellationToken = default);
     Task<Result<List<PermissionDto>>> GetRolePermissionsAsync(int roleId, CancellationToken cancellationToken = default);
+
+    // Permission Matrix methods
+    Task<Result<RolePermissionMatrixDto>> GetPermissionMatrixAsync(int roleId, CancellationToken cancellationToken = default);
+    Task<Result<bool>> SavePermissionMatrixAsync(SaveRolePermissionsDto dto, CancellationToken cancellationToken = default);
 }
 
 public interface IPermissionService

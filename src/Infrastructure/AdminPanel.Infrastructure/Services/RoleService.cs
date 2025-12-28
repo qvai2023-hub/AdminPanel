@@ -314,4 +314,100 @@ public class RoleService : IRoleService
 
         return Result<List<PermissionDto>>.Success(permissions);
     }
+
+    public async Task<Result<RolePermissionMatrixDto>> GetPermissionMatrixAsync(int roleId, CancellationToken cancellationToken = default)
+    {
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId && !r.IsDeleted, cancellationToken);
+        if (role == null)
+            return Result<RolePermissionMatrixDto>.Failure(Messages.Error.RoleNotFound);
+
+        // Get all active actions
+        var actions = await _context.Actions
+            .AsNoTracking()
+            .Where(a => !a.IsDeleted && a.IsActive)
+            .OrderBy(a => a.DisplayOrder)
+            .ToListAsync(cancellationToken);
+
+        // Get all active pages with their PageActions
+        var pages = await _context.Pages
+            .AsNoTracking()
+            .Include(p => p.PageActions)
+            .Where(p => !p.IsDeleted && p.IsActive)
+            .OrderBy(p => p.DisplayOrder)
+            .ToListAsync(cancellationToken);
+
+        // Get role's granted page actions
+        var grantedPageActionIds = await _context.RolePageActions
+            .AsNoTracking()
+            .Where(rpa => rpa.RoleId == roleId && rpa.IsGranted)
+            .Select(rpa => rpa.PageActionId)
+            .ToListAsync(cancellationToken);
+
+        // Build the matrix
+        var matrix = new RolePermissionMatrixDto
+        {
+            RoleId = roleId,
+            RoleName = role.Name,
+            IsSystemRole = role.IsSystemRole,
+            Actions = actions.Select(a => new ActionHeaderDto
+            {
+                ActionId = a.Id,
+                NameAr = a.NameAr,
+                NameEn = a.NameEn,
+                Code = a.Code,
+                Icon = a.Icon,
+                DisplayOrder = a.DisplayOrder
+            }).ToList(),
+            Pages = pages.Select(p => new PagePermissionDto
+            {
+                PageId = p.Id,
+                NameAr = p.NameAr,
+                NameEn = p.NameEn,
+                Url = p.Url,
+                Icon = p.Icon,
+                DisplayOrder = p.DisplayOrder,
+                ActionPermissions = actions.Select(a =>
+                {
+                    var pageAction = p.PageActions.FirstOrDefault(pa => pa.ActionId == a.Id && pa.IsActive);
+                    return new ActionPermissionDto
+                    {
+                        ActionId = a.Id,
+                        PageActionId = pageAction?.Id,
+                        IsAvailable = pageAction != null,
+                        IsGranted = pageAction != null && grantedPageActionIds.Contains(pageAction.Id)
+                    };
+                }).ToList()
+            }).ToList()
+        };
+
+        return Result<RolePermissionMatrixDto>.Success(matrix);
+    }
+
+    public async Task<Result<bool>> SavePermissionMatrixAsync(SaveRolePermissionsDto dto, CancellationToken cancellationToken = default)
+    {
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == dto.RoleId && !r.IsDeleted, cancellationToken);
+        if (role == null)
+            return Result<bool>.Failure(Messages.Error.RoleNotFound);
+
+        // Remove existing role page actions
+        var existingRolePageActions = await _context.RolePageActions
+            .Where(rpa => rpa.RoleId == dto.RoleId)
+            .ToListAsync(cancellationToken);
+
+        _context.RolePageActions.RemoveRange(existingRolePageActions);
+
+        // Add new granted permissions
+        foreach (var permission in dto.Permissions.Where(p => p.IsGranted))
+        {
+            _context.RolePageActions.Add(new RolePageAction
+            {
+                RoleId = dto.RoleId,
+                PageActionId = permission.PageActionId,
+                IsGranted = true
+            });
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return Result<bool>.Success(true, Messages.Success.PermissionsAssigned);
+    }
 }

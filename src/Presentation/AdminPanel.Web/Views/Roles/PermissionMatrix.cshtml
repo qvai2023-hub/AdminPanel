@@ -1,0 +1,219 @@
+@model RolePermissionMatrixViewModel
+@{
+    ViewData["Title"] = "صلاحيات الصفحات - " + Model.RoleName;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-grid-3x3-gap me-2"></i>مصفوفة الصلاحيات</h2>
+        <p class="text-muted mb-0">إدارة صلاحيات الصفحات للدور: <strong>@Model.RoleName</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="@Url.Action("Permissions", new { id = Model.RoleId })" class="btn btn-outline-info">
+            <i class="bi bi-key me-1"></i>صلاحيات النظام
+        </a>
+        <a href="@Url.Action("Edit", new { id = Model.RoleId })" class="btn btn-outline-primary">
+            <i class="bi bi-pencil me-1"></i>تعديل الدور
+        </a>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-right me-1"></i>رجوع
+        </a>
+    </div>
+</div>
+
+@if (Model.IsSystemRole)
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        هذا دور نظام. الصلاحيات المعروضة للقراءة فقط.
+    </div>
+}
+
+@if (!Model.Pages.Any())
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        لا توجد صفحات مفعلة. يرجى إضافة صفحات وتعيين إجراءات لها أولاً.
+    </div>
+}
+else if (!Model.Actions.Any())
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        لا توجد إجراءات مفعلة. يرجى إضافة إجراءات أولاً.
+    </div>
+}
+else
+{
+    <form asp-action="PermissionMatrix" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.RoleId" />
+
+        <div class="card table-card">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-table me-2"></i>مصفوفة الصلاحيات</span>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-success" onclick="selectAll()">
+                            <i class="bi bi-check-all me-1"></i>تحديد الكل
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="deselectAll()">
+                            <i class="bi bi-x-lg me-1"></i>إلغاء الكل
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover mb-0 permission-matrix">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="sticky-col bg-light" style="min-width: 200px;">
+                                    <i class="bi bi-file-earmark-text me-1"></i>الصفحة
+                                </th>
+                                @foreach (var action in Model.Actions)
+                                {
+                                    <th class="text-center" style="min-width: 100px;">
+                                        <div class="d-flex flex-column align-items-center">
+                                            @if (!string.IsNullOrEmpty(action.Icon))
+                                            {
+                                                <i class="bi bi-@action.Icon mb-1"></i>
+                                            }
+                                            <span>@action.NameAr</span>
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-muted"
+                                                    onclick="toggleColumn(@action.ActionId)" title="تحديد/إلغاء العمود">
+                                                <i class="bi bi-arrows-vertical"></i>
+                                            </button>
+                                        </div>
+                                    </th>
+                                }
+                                <th class="text-center" style="width: 80px;">
+                                    <i class="bi bi-gear"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var page in Model.Pages)
+                            {
+                                <tr>
+                                    <td class="sticky-col bg-white">
+                                        <div class="d-flex align-items-center">
+                                            @if (!string.IsNullOrEmpty(page.Icon))
+                                            {
+                                                <i class="bi bi-@page.Icon me-2 text-primary"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-file-earmark me-2 text-muted"></i>
+                                            }
+                                            <div>
+                                                <strong>@page.NameAr</strong>
+                                                <br />
+                                                <small class="text-muted">@page.Url</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    @foreach (var actionPerm in page.ActionPermissions)
+                                    {
+                                        <td class="text-center align-middle">
+                                            @if (actionPerm.IsAvailable && actionPerm.PageActionId.HasValue)
+                                            {
+                                                <div class="form-check d-flex justify-content-center">
+                                                    <input type="checkbox"
+                                                           class="form-check-input permission-checkbox"
+                                                           name="grantedPageActionIds"
+                                                           value="@actionPerm.PageActionId"
+                                                           data-page-id="@page.PageId"
+                                                           data-action-id="@actionPerm.ActionId"
+                                                           @(actionPerm.IsGranted ? "checked" : "")
+                                                           @(Model.IsSystemRole ? "disabled" : "") />
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">
+                                                    <i class="bi bi-dash"></i>
+                                                </span>
+                                            }
+                                        </td>
+                                    }
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-link btn-sm p-0"
+                                                onclick="toggleRow(@page.PageId)" title="تحديد/إلغاء الصف">
+                                            <i class="bi bi-arrows"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @if (!Model.IsSystemRole)
+            {
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            الخانات الفارغة (-) تعني أن الإجراء غير مفعل لهذه الصفحة
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>حفظ الصلاحيات
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </form>
+}
+
+<style>
+    .permission-matrix {
+        font-size: 0.9rem;
+    }
+    .permission-matrix th,
+    .permission-matrix td {
+        vertical-align: middle;
+    }
+    .permission-matrix .sticky-col {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+    }
+    .permission-matrix thead th.sticky-col {
+        z-index: 2;
+    }
+    .permission-matrix .form-check-input {
+        width: 1.25em;
+        height: 1.25em;
+        cursor: pointer;
+    }
+    .permission-matrix .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function selectAll() {
+            document.querySelectorAll('.permission-checkbox:not([disabled])').forEach(cb => cb.checked = true);
+        }
+
+        function deselectAll() {
+            document.querySelectorAll('.permission-checkbox:not([disabled])').forEach(cb => cb.checked = false);
+        }
+
+        function toggleRow(pageId) {
+            const checkboxes = document.querySelectorAll(`.permission-checkbox[data-page-id="${pageId}"]:not([disabled])`);
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+        }
+
+        function toggleColumn(actionId) {
+            const checkboxes = document.querySelectorAll(`.permission-checkbox[data-action-id="${actionId}"]:not([disabled])`);
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+        }
+    </script>
+}

@@ -671,6 +671,88 @@ public class RolesController : BaseController
 
         return RedirectToAction(nameof(Permissions), new { id });
     }
+
+    [HttpGet]
+    public async Task<IActionResult> PermissionMatrix(int id)
+    {
+        var matrixResult = await _roleService.GetPermissionMatrixAsync(id);
+        if (matrixResult.IsFailure)
+        {
+            SetErrorMessage("الدور غير موجود");
+            return RedirectToAction(nameof(Index));
+        }
+
+        var matrix = matrixResult.Data!;
+        var viewModel = new RolePermissionMatrixViewModel
+        {
+            RoleId = matrix.RoleId,
+            RoleName = matrix.RoleName,
+            IsSystemRole = matrix.IsSystemRole,
+            Actions = matrix.Actions.Select(a => new RoleActionHeaderViewModel
+            {
+                ActionId = a.ActionId,
+                NameAr = a.NameAr,
+                Code = a.Code,
+                Icon = a.Icon
+            }).ToList(),
+            Pages = matrix.Pages.Select(p => new RolePagePermissionViewModel
+            {
+                PageId = p.PageId,
+                NameAr = p.NameAr,
+                Url = p.Url,
+                Icon = p.Icon,
+                ActionPermissions = p.ActionPermissions.Select(ap => new RoleActionPermissionViewModel
+                {
+                    ActionId = ap.ActionId,
+                    PageActionId = ap.PageActionId,
+                    IsAvailable = ap.IsAvailable,
+                    IsGranted = ap.IsGranted
+                }).ToList()
+            }).ToList()
+        };
+
+        return View(viewModel);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PermissionMatrix(int id, List<int> grantedPageActionIds)
+    {
+        // Get the matrix to find all available page actions
+        var matrixResult = await _roleService.GetPermissionMatrixAsync(id);
+        if (matrixResult.IsFailure)
+        {
+            SetErrorMessage("الدور غير موجود");
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Build the permissions list
+        var permissions = new List<PageActionPermissionDto>();
+        foreach (var page in matrixResult.Data!.Pages)
+        {
+            foreach (var actionPerm in page.ActionPermissions.Where(ap => ap.IsAvailable && ap.PageActionId.HasValue))
+            {
+                permissions.Add(new PageActionPermissionDto
+                {
+                    PageActionId = actionPerm.PageActionId!.Value,
+                    IsGranted = grantedPageActionIds?.Contains(actionPerm.PageActionId.Value) ?? false
+                });
+            }
+        }
+
+        var result = await _roleService.SavePermissionMatrixAsync(new SaveRolePermissionsDto
+        {
+            RoleId = id,
+            Permissions = permissions
+        });
+
+        if (result.IsFailure)
+            SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ في تحديث الصلاحيات");
+        else
+            SetSuccessMessage("تم تحديث صلاحيات الصفحات بنجاح");
+
+        return RedirectToAction(nameof(PermissionMatrix), new { id });
+    }
 }
 #endregion
 
