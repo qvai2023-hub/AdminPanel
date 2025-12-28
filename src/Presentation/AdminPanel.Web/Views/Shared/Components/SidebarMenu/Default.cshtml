@@ -10,14 +10,19 @@
                    (currentPath.Equals(item.Url.ToLower()) ||
                     currentPath.StartsWith(item.Url.ToLower() + "/"));
 
+    // Check if any child or grandchild is active
     var hasActiveChild = item.Children.Any(c =>
-        !string.IsNullOrEmpty(c.Url) &&
+        (!string.IsNullOrEmpty(c.Url) &&
         (currentPath.Equals(c.Url.ToLower()) ||
-         currentPath.StartsWith(c.Url.ToLower() + "/")));
+         currentPath.StartsWith(c.Url.ToLower() + "/"))) ||
+        c.Children.Any(gc =>
+            !string.IsNullOrEmpty(gc.Url) &&
+            (currentPath.Equals(gc.Url.ToLower()) ||
+             currentPath.StartsWith(gc.Url.ToLower() + "/"))));
 
     @if (item.Children.Any())
     {
-        <!-- Parent with children (submenu) -->
+        <!-- Level 1: Parent with children (submenu) -->
         <li class="has-submenu">
             <a href="#submenu-@item.Id" class="@(hasActiveChild ? "active" : "")" data-bs-toggle="collapse" aria-expanded="@(hasActiveChild ? "true" : "false")">
                 @if (!string.IsNullOrEmpty(item.Icon))
@@ -37,26 +42,77 @@
                     var isChildActive = !string.IsNullOrEmpty(child.Url) &&
                                        (currentPath.Equals(child.Url.ToLower()) ||
                                         currentPath.StartsWith(child.Url.ToLower() + "/"));
-                    <li>
-                        <a href="@child.Url" class="@(isChildActive ? "active" : "")">
-                            @if (!string.IsNullOrEmpty(child.Icon))
-                            {
-                                <i class="bi bi-@child.Icon"></i>
-                            }
-                            else
-                            {
-                                <i class="bi bi-circle"></i>
-                            }
-                            <span>@child.NameAr</span>
-                        </a>
-                    </li>
+
+                    // Check if any grandchild is active
+                    var hasActiveGrandchild = child.Children.Any(gc =>
+                        !string.IsNullOrEmpty(gc.Url) &&
+                        (currentPath.Equals(gc.Url.ToLower()) ||
+                         currentPath.StartsWith(gc.Url.ToLower() + "/")));
+
+                    @if (child.Children.Any())
+                    {
+                        <!-- Level 2: Child with grandchildren -->
+                        <li class="has-submenu">
+                            <a href="#submenu-@child.Id" class="@(hasActiveGrandchild ? "active" : "")" data-bs-toggle="collapse" aria-expanded="@(hasActiveGrandchild ? "true" : "false")">
+                                @if (!string.IsNullOrEmpty(child.Icon))
+                                {
+                                    <i class="bi bi-@child.Icon"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-folder2"></i>
+                                }
+                                <span>@child.NameAr</span>
+                                <i class="bi bi-chevron-down submenu-arrow"></i>
+                            </a>
+                            <ul class="submenu submenu-level-3 collapse @(hasActiveGrandchild ? "show" : "")" id="submenu-@child.Id">
+                                @foreach (var grandchild in child.Children)
+                                {
+                                    var isGrandchildActive = !string.IsNullOrEmpty(grandchild.Url) &&
+                                                            (currentPath.Equals(grandchild.Url.ToLower()) ||
+                                                             currentPath.StartsWith(grandchild.Url.ToLower() + "/"));
+                                    <!-- Level 3: Grandchild -->
+                                    <li>
+                                        <a href="@grandchild.Url" class="@(isGrandchildActive ? "active" : "")">
+                                            @if (!string.IsNullOrEmpty(grandchild.Icon))
+                                            {
+                                                <i class="bi bi-@grandchild.Icon"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-dot"></i>
+                                            }
+                                            <span>@grandchild.NameAr</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <!-- Level 2: Child without grandchildren -->
+                        <li>
+                            <a href="@child.Url" class="@(isChildActive ? "active" : "")">
+                                @if (!string.IsNullOrEmpty(child.Icon))
+                                {
+                                    <i class="bi bi-@child.Icon"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-circle"></i>
+                                }
+                                <span>@child.NameAr</span>
+                            </a>
+                        </li>
+                    }
                 }
             </ul>
         </li>
     }
     else
     {
-        <!-- Single menu item -->
+        <!-- Level 1: Single menu item -->
         <li>
             <a href="@item.Url" class="@(isActive ? "active" : "")">
                 @if (!string.IsNullOrEmpty(item.Icon))

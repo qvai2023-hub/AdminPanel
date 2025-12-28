@@ -1,5 +1,6 @@
 using AdminPanel.Application.Common.Interfaces;
 using AdminPanel.Application.Features.Menu.DTOs;
+using AdminPanel.Domain.Entities;
 using AdminPanel.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,49 +54,53 @@ public class MenuService : IMenuService
             .ToListAsync(cancellationToken);
 
         // 4. Filter pages that user has permission to view
-        // Include parent pages if any child is accessible
+        // Include parent pages if any child/grandchild is accessible (3 levels deep)
         var accessiblePageIds = new HashSet<int>(grantedPageIds);
 
-        // Add parent pages of accessible pages
-        foreach (var page in allPages.Where(p => accessiblePageIds.Contains(p.Id) && p.ParentId.HasValue))
+        // Recursively add parent pages of accessible pages (supports 3+ levels)
+        bool addedNew;
+        do
         {
-            accessiblePageIds.Add(page.ParentId!.Value);
-        }
+            addedNew = false;
+            foreach (var page in allPages.Where(p => accessiblePageIds.Contains(p.Id) && p.ParentId.HasValue))
+            {
+                if (!accessiblePageIds.Contains(page.ParentId!.Value))
+                {
+                    accessiblePageIds.Add(page.ParentId!.Value);
+                    addedNew = true;
+                }
+            }
+        } while (addedNew);
 
         var accessiblePages = allPages
             .Where(p => accessiblePageIds.Contains(p.Id))
             .ToList();
 
-        // 5. Build tree structure
-        var rootPages = accessiblePages
-            .Where(p => !p.ParentId.HasValue)
-            .OrderBy(p => p.DisplayOrder)
-            .ToList();
-
-        var menuItems = rootPages.Select(p => new MenuItemDto
-        {
-            Id = p.Id,
-            NameAr = p.NameAr,
-            NameEn = p.NameEn,
-            Url = p.Url,
-            Icon = p.Icon,
-            DisplayOrder = p.DisplayOrder,
-            Children = accessiblePages
-                .Where(c => c.ParentId == p.Id)
-                .OrderBy(c => c.DisplayOrder)
-                .Select(c => new MenuItemDto
-                {
-                    Id = c.Id,
-                    NameAr = c.NameAr,
-                    NameEn = c.NameEn,
-                    Url = c.Url,
-                    Icon = c.Icon,
-                    DisplayOrder = c.DisplayOrder,
-                    Children = new List<MenuItemDto>()
-                })
-                .ToList()
-        }).ToList();
+        // 5. Build tree structure recursively (supports 3+ levels)
+        var menuItems = BuildMenuTree(accessiblePages, null);
 
         return menuItems;
+    }
+
+    /// <summary>
+    /// Recursively builds the menu tree structure from a flat list of pages.
+    /// Supports unlimited levels of nesting.
+    /// </summary>
+    private List<MenuItemDto> BuildMenuTree(List<Page> allPages, int? parentId)
+    {
+        return allPages
+            .Where(p => p.ParentId == parentId)
+            .OrderBy(p => p.DisplayOrder)
+            .Select(p => new MenuItemDto
+            {
+                Id = p.Id,
+                NameAr = p.NameAr,
+                NameEn = p.NameEn,
+                Url = p.Url,
+                Icon = p.Icon,
+                DisplayOrder = p.DisplayOrder,
+                Children = BuildMenuTree(allPages, p.Id) // Recursive call for children
+            })
+            .ToList();
     }
 }
