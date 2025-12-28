@@ -331,6 +331,35 @@ public class UserService : IUserService
         return Result<List<string>>.Success(permissions);
     }
 
-  
-  
+    public async Task<Result<List<UserRoleDto>>> GetUserRolesAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users
+            .AsNoTracking()
+            .Include(u => u.UserRoles)
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
+
+        if (user == null)
+            return Result<List<UserRoleDto>>.Failure(Messages.Error.UserNotFound);
+
+        // Get all active roles
+        var allRoles = await _context.Roles
+            .AsNoTracking()
+            .Where(r => !r.IsDeleted && r.IsActive)
+            .OrderBy(r => r.Name)
+            .ToListAsync(cancellationToken);
+
+        // Get user's assigned role IDs
+        var assignedRoleIds = user.UserRoles.Select(ur => ur.RoleId).ToHashSet();
+
+        // Build the result
+        var result = allRoles.Select(r => new UserRoleDto
+        {
+            RoleId = r.Id,
+            RoleName = r.Name,
+            Description = r.Description,
+            IsAssigned = assignedRoleIds.Contains(r.Id)
+        }).ToList();
+
+        return Result<List<UserRoleDto>>.Success(result);
+    }
 }

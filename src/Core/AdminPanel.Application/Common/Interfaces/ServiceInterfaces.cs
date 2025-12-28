@@ -24,7 +24,8 @@ public interface IUserService
     Task<Result<bool>> ToggleStatusAsync(int id, CancellationToken cancellationToken = default);
     Task<Result<bool>> AssignRolesAsync(int userId, List<int> roleIds, CancellationToken cancellationToken = default);
     Task<Result<List<string>>> GetUserPermissionsAsync(int userId, CancellationToken cancellationToken = default);
-    Task<bool> HasPermissionAsync(int userId, string permissionCode, CancellationToken cancellationToken = default);  // ✅ بدون Result
+    Task<bool> HasPermissionAsync(int userId, string permissionCode, CancellationToken cancellationToken = default);
+    Task<Result<List<UserRoleDto>>> GetUserRolesAsync(int userId, CancellationToken cancellationToken = default);
 }
 
 public interface IAuthService 

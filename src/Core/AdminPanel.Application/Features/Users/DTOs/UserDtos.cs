@@ -70,3 +70,17 @@ public class UserFilterDto
     public string? SortBy { get; set; }
     public bool SortDescending { get; set; }
 }
+
+public class UserRoleDto
+{
+    public int RoleId { get; set; }
+    public string RoleName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsAssigned { get; set; }
+}
+
+public class UserRolesAssignDto
+{
+    public int UserId { get; set; }
+    public List<int> RoleIds { get; set; } = new();
+}
