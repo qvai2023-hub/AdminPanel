@@ -673,49 +673,6 @@ public class RolesController : BaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Permissions(int id)
-    {
-        var roleResult = await _roleService.GetByIdAsync(id);
-        if (roleResult.IsFailure)
-        {
-            SetErrorMessage("الدور غير موجود");
-            return RedirectToAction(nameof(Index));
-        }
-
-        var permissionsResult = await _permissionService.GetPermissionsForRoleAsync(id);
-        var groupedResult = await _permissionService.GetGroupedAsync();
-
-        return View(new RolePermissionsViewModel
-        {
-            RoleId = id,
-            RoleName = roleResult.Data!.Name,
-            IsSystemRole = roleResult.Data.IsSystemRole,
-            PermissionGroups = groupedResult.IsSuccess ? groupedResult.Data! : new List<PermissionGroupDto>(),
-            GrantedPermissionIds = permissionsResult.IsSuccess ? permissionsResult.Data!.Where(p => p.IsGranted).Select(p => p.Id).ToList() : new List<int>()
-        });
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Permissions(int id, List<int> permissionIds)
-    {
-        var permissions = permissionIds?.Select(pid => new PermissionAssignmentDto
-        {
-            PermissionId = pid,
-            IsGranted = true
-        }).ToList() ?? new List<PermissionAssignmentDto>();
-
-        var result = await _roleService.AssignPermissionsAsync(id, permissions);
-
-        if (result.IsFailure)
-            SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ في تحديث الصلاحيات");
-        else
-            SetSuccessMessage("تم تحديث الصلاحيات بنجاح");
-
-        return RedirectToAction(nameof(Permissions), new { id });
-    }
-
-    [HttpGet]
     public async Task<IActionResult> PermissionMatrix(int id)
     {
         var matrixResult = await _roleService.GetPermissionMatrixAsync(id);

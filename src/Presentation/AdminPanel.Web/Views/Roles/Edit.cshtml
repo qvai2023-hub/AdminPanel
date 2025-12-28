@@ -73,14 +73,9 @@
 
             <hr />
             <div class="d-flex justify-content-between">
-                <div class="d-flex gap-2">
-                    <a href="@Url.Action("Permissions", new { id = Model.Id })" class="btn btn-info">
-                        <i class="bi bi-key me-1"></i>صلاحيات النظام
-                    </a>
-                    <a href="@Url.Action("PermissionMatrix", new { id = Model.Id })" class="btn btn-success">
-                        <i class="bi bi-grid-3x3-gap me-1"></i>صلاحيات الصفحات
-                    </a>
-                </div>
+                <a href="@Url.Action("PermissionMatrix", new { id = Model.Id })" class="btn btn-success">
+                    <i class="bi bi-key me-1"></i>إدارة الصلاحيات
+                </a>
                 <div class="d-flex gap-2">
                     <a href="@Url.Action("Index")" class="btn btn-secondary">
                         <i class="bi bi-x-circle me-1"></i>إلغاء
