@@ -459,13 +459,20 @@ public class RolesController : BaseController
         _permissionService = permissionService;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(RoleFilterDto filter)
     {
-        var result = await _roleService.GetAllAsync();
-        return View(new RolesViewModel
+        filter.PageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
+        filter.PageSize = filter.PageSize < 1 ? 10 : filter.PageSize;
+
+        var result = await _roleService.GetPagedAsync(filter);
+
+        var viewModel = new RolesIndexViewModel
         {
-            Roles = result.IsSuccess ? result.Data! : new List<RoleListDto>()
-        });
+            Roles = result.IsSuccess ? result.Data! : new PaginatedList<RoleListDto>(new List<RoleListDto>(), 0, 1, 10),
+            Filter = filter
+        };
+
+        return View(viewModel);
     }
 
     [HttpGet]
@@ -508,6 +515,15 @@ public class RolesController : BaseController
             return View(model);
         }
 
+        // Check if name is unique
+        if (!await _roleService.IsNameUniqueAsync(model.Name))
+        {
+            ModelState.AddModelError("Name", "اسم الدور مستخدم مسبقاً");
+            var permissionsResult = await _permissionService.GetGroupedAsync();
+            model.PermissionGroups = permissionsResult.IsSuccess ? permissionsResult.Data! : new List<PermissionGroupDto>();
+            return View(model);
+        }
+
         var result = await _roleService.CreateAsync(new CreateRoleDto
         {
             Name = model.Name,
@@ -543,7 +559,8 @@ public class RolesController : BaseController
             Id = role.Id,
             Name = role.Name,
             Description = role.Description,
-            IsSystemRole = role.IsSystemRole
+            IsSystemRole = role.IsSystemRole,
+            IsActive = role.IsActive
         });
     }
 
@@ -560,10 +577,18 @@ public class RolesController : BaseController
             return RedirectToAction(nameof(Index));
         }
 
+        // Check if name is unique (exclude current)
+        if (!await _roleService.IsNameUniqueAsync(model.Name, id))
+        {
+            ModelState.AddModelError("Name", "اسم الدور مستخدم مسبقاً");
+            return View(model);
+        }
+
         var result = await _roleService.UpdateAsync(id, new UpdateRoleDto
         {
             Name = model.Name,
-            Description = model.Description
+            Description = model.Description,
+            IsActive = model.IsActive
         });
 
         if (result.IsFailure)
@@ -586,6 +611,20 @@ public class RolesController : BaseController
             SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ في حذف الدور");
         else
             SetSuccessMessage("تم حذف الدور بنجاح");
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleStatus(int id)
+    {
+        var result = await _roleService.ToggleStatusAsync(id);
+
+        if (result.IsFailure)
+            SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ");
+        else
+            SetSuccessMessage(result.Message ?? "تم تغيير الحالة");
 
         return RedirectToAction(nameof(Index));
     }
@@ -617,11 +656,11 @@ public class RolesController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Permissions(int id, List<int> permissionIds)
     {
-        var permissions = permissionIds.Select(pid => new PermissionAssignmentDto
+        var permissions = permissionIds?.Select(pid => new PermissionAssignmentDto
         {
             PermissionId = pid,
             IsGranted = true
-        }).ToList();
+        }).ToList() ?? new List<PermissionAssignmentDto>();
 
         var result = await _roleService.AssignPermissionsAsync(id, permissions);
 

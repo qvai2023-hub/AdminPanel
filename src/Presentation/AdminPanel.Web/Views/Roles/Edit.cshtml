@@ -3,22 +3,21 @@
     ViewData["Title"] = "تعديل الدور";
 }
 
-<div class="mb-4">
-    <h2 class="mb-1"><i class="bi bi-shield-gear me-2"></i>تعديل الدور</h2>
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">الرئيسية</a></li>
-            <li class="breadcrumb-item"><a href="@Url.Action("Index")">الأدوار</a></li>
-            <li class="breadcrumb-item active">تعديل: @Model.Name</li>
-        </ol>
-    </nav>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-shield-gear me-2"></i>تعديل الدور</h2>
+        <p class="text-muted mb-0">تعديل بيانات الدور: @Model.Name</p>
+    </div>
+    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>رجوع
+    </a>
 </div>
 
 @if (Model.IsSystemRole)
 {
     <div class="alert alert-warning">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        <strong>تنبيه:</strong> هذا دور نظام ولا يمكن تعديله.
+        <strong>تنبيه:</strong> هذا دور نظام ولا يمكن تعديل بياناته الأساسية، لكن يمكن إدارة صلاحياته.
     </div>
 }
 
@@ -28,56 +27,71 @@
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
             <input type="hidden" asp-for="IsSystemRole" />
-            
+
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-            
+
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label asp-for="Name" class="form-label"></label>
-                    
-                    <span asp-validation-for="Name" class="text-danger"></span>
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Name" class="form-label"></label>
+                    <label asp-for="Name" class="form-label">اسم الدور <span class="text-danger">*</span></label>
                     @if (Model.IsSystemRole)
                     {
                         <input asp-for="Name" class="form-control" readonly disabled />
                     }
                     else
                     {
-                        <input asp-for="Name" class="form-control" />
+                        <input asp-for="Name" class="form-control" placeholder="أدخل اسم الدور" />
                     }
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label asp-for="Description" class="form-label"></label>
+                    <label asp-for="Description" class="form-label">الوصف</label>
                     @if (Model.IsSystemRole)
                     {
                         <input asp-for="Description" class="form-control" readonly disabled />
                     }
                     else
                     {
-                        <input asp-for="Description" class="form-control" />
+                        <input asp-for="Description" class="form-control" placeholder="وصف الدور (اختياري)" />
                     }
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
-            
-            <div class="d-flex gap-2">
-                @if (!Model.IsSystemRole)
-                {
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle me-1"></i>حفظ التغييرات
-                    </button>
-                }
+            </div>
+
+            @if (!Model.IsSystemRole)
+            {
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label d-block">الحالة</label>
+                        <div class="form-check mt-2">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsActive" class="form-check-label">نشط</label>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <hr />
+            <div class="d-flex justify-content-between">
                 <a href="@Url.Action("Permissions", new { id = Model.Id })" class="btn btn-info">
                     <i class="bi bi-key me-1"></i>إدارة الصلاحيات
                 </a>
-                <a href="@Url.Action("Index")" class="btn btn-secondary">
-                    <i class="bi bi-x-circle me-1"></i>رجوع
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="bi bi-x-circle me-1"></i>إلغاء
+                    </a>
+                    @if (!Model.IsSystemRole)
+                    {
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>حفظ التغييرات
+                        </button>
+                    }
+                </div>
             </div>
         </form>
     </div>
 </div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

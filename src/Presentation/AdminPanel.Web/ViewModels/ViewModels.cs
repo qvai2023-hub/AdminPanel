@@ -146,6 +146,12 @@ public class RolesViewModel
     public List<RoleListDto> Roles { get; set; } = new();
 }
 
+public class RolesIndexViewModel
+{
+    public PaginatedList<RoleListDto> Roles { get; set; } = null!;
+    public RoleFilterDto Filter { get; set; } = new();
+}
+
 public class RoleDetailsViewModel
 {
     public RoleDto Role { get; set; } = null!;
@@ -155,8 +161,10 @@ public class RoleDetailsViewModel
 public class CreateRoleViewModel
 {
     [Required(ErrorMessage = "اسم الدور مطلوب")]
+    [Display(Name = "اسم الدور")]
     public string Name { get; set; } = string.Empty;
 
+    [Display(Name = "الوصف")]
     public string? Description { get; set; }
     public List<int> SelectedPermissionIds { get; set; } = new();
     public List<PermissionGroupDto> PermissionGroups { get; set; } = new();
@@ -166,11 +174,17 @@ public class EditRoleViewModel
 {
     public int Id { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "اسم الدور مطلوب")]
+    [Display(Name = "اسم الدور")]
     public string Name { get; set; } = string.Empty;
 
+    [Display(Name = "الوصف")]
     public string? Description { get; set; }
+
     public bool IsSystemRole { get; set; }
+
+    [Display(Name = "نشط")]
+    public bool IsActive { get; set; }
 }
 
 public class RolePermissionsViewModel

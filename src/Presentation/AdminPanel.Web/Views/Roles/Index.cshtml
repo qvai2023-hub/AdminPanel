@@ -1,111 +1,190 @@
-﻿@model AdminPanel.Web.ViewModels.RolesViewModel
+@model RolesIndexViewModel
 @{
     ViewData["Title"] = "إدارة الأدوار";
 }
 
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-shield-lock me-2"></i>إدارة الأدوار</h2>
-        <a href="@Url.Action("Create", "Roles")" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i>إضافة دور جديد
-        </a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-shield-lock me-2"></i>إدارة الأدوار</h2>
+        <p class="text-muted mb-0">إجمالي @Model.Roles.TotalCount دور</p>
     </div>
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>إضافة دور جديد
+    </a>
+</div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>اسم الدور</th>
-                            <th>الوصف</th>
-                            <th>عدد المستخدمين</th>
-                            <th>عدد الصلاحيات</th>
-                            <th>نوع الدور</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model?.Roles != null && Model.Roles.Any())
-                        {
-                            @foreach (var role in Model.Roles)
-                            {
-                                <tr>
-                                    <td>@role.Id</td>
-                                    <td><strong>@role.Name</strong></td>
-                                    <td>@(role.Description ?? "-")</td>
-                                    <td>
-                                        <span class="badge bg-info">@role.UsersCount</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary">@role.PermissionsCount</span>
-                                    </td>
-                                    <td>
-                                        @if (role.IsSystemRole)
-                                        {
-                                            <span class="badge bg-warning">دور نظام</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-success">مخصص</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="@Url.Action("Edit", "Roles", new { id = role.Id })"
-                                               class="btn btn-sm btn-outline-primary" title="تعديل">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <a href="@Url.Action("Permissions", "Roles", new { id = role.Id })"
-                                               class="btn btn-sm btn-outline-info" title="الصلاحيات">
-                                                <i class="bi bi-key"></i>
-                                            </a>
-                                            @if (!role.IsSystemRole)
-                                            {
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        onclick="confirmDelete(@role.Id, '@role.Name')" title="حذف">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            }
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="7" class="text-center py-4">
-                                    <i class="bi bi-inbox fs-1 text-muted"></i>
-                                    <p class="text-muted mt-2">لا توجد أدوار</p>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+<!-- Filters -->
+<div class="card table-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">بحث</label>
+                <input type="text" name="SearchTerm" class="form-control" placeholder="اسم أو وصف..." value="@Model.Filter.SearchTerm" />
             </div>
-        </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">الحالة</label>
+                <select name="IsActive" class="form-select">
+                    <option value="">كل الحالات</option>
+                    <option value="true" selected="@(Model.Filter.IsActive == true ? "selected" : null)">نشط</option>
+                    <option value="false" selected="@(Model.Filter.IsActive == false ? "selected" : null)">غير نشط</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">نوع الدور</label>
+                <select name="IsSystemRole" class="form-select">
+                    <option value="">كل الأنواع</option>
+                    <option value="true" selected="@(Model.Filter.IsSystemRole == true ? "selected" : null)">دور نظام</option>
+                    <option value="false" selected="@(Model.Filter.IsSystemRole == false ? "selected" : null)">مخصص</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small text-muted">عدد</label>
+                <select name="PageSize" class="form-select">
+                    <option value="10" selected="@(Model.Filter.PageSize == 10 ? "selected" : null)">10</option>
+                    <option value="25" selected="@(Model.Filter.PageSize == 25 ? "selected" : null)">25</option>
+                    <option value="50" selected="@(Model.Filter.PageSize == 50 ? "selected" : null)">50</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i>بحث
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>عرض الكل
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- Roles Table -->
+<div class="card table-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الدور</th>
+                        <th>الوصف</th>
+                        <th>نوع الدور</th>
+                        <th>عدد المستخدمين</th>
+                        <th>عدد الصلاحيات</th>
+                        <th>الحالة</th>
+                        <th style="width: 180px;">العمليات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Roles.Items.Any())
+                    {
+                        @foreach (var role in Model.Roles.Items)
+                        {
+                            <tr>
+                                <td>@role.Id</td>
+                                <td><strong>@role.Name</strong></td>
+                                <td>@(role.Description ?? "-")</td>
+                                <td>
+                                    @if (role.IsSystemRole)
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-shield-lock me-1"></i>دور نظام
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info">مخصص</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@role.UsersCount</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@role.PermissionsCount</span>
+                                </td>
+                                <td>
+                                    @if (role.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">غير نشط</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Edit", new { id = role.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="@Url.Action("Permissions", new { id = role.Id })" class="btn btn-sm btn-outline-info" title="الصلاحيات">
+                                            <i class="bi bi-key"></i>
+                                        </a>
+                                        @if (!role.IsSystemRole)
+                                        {
+                                            <form asp-action="ToggleStatus" asp-route-id="@role.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="@(role.IsActive ? "تعطيل" : "تفعيل")">
+                                                    <i class="bi bi-@(role.IsActive ? "pause" : "play")"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@role.Id, '@role.Name')" title="حذف" @(role.UsersCount > 0 ? "disabled" : "")>
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                    @if (role.UsersCount > 0 && !role.IsSystemRole)
+                                    {
+                                        <br />
+                                        <small class="text-muted">مرتبط بمستخدمين</small>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                <span class="text-muted">لا توجد أدوار</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (Model.Roles.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination mb-0 justify-content-center">
+                    <li class="page-item @(Model.Roles.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Filter.PageNumber - 1, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive, Model.Filter.IsSystemRole })">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= Model.Roles.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.Filter.PageNumber ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive, Model.Filter.IsSystemRole })">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.Roles.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Filter.PageNumber + 1, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive, Model.Filter.IsSystemRole })">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+<!-- Delete Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -118,7 +197,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                <form id="deleteForm" method="post" style="display: inline;">
+                <form id="deleteForm" method="post" class="d-inline">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-danger">حذف</button>
                 </form>
@@ -131,7 +210,7 @@
     <script>
         function confirmDelete(id, name) {
             document.getElementById('roleNameToDelete').textContent = name;
-            document.getElementById('deleteForm').action = '@Url.Action("Delete", "Roles")/' + id;
+            document.getElementById('deleteForm').action = '/Roles/Delete/' + id;
             new bootstrap.Modal(document.getElementById('deleteModal')).show();
         }
     </script>
