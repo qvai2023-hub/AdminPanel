@@ -74,7 +74,7 @@
                         <th>الأدوار</th>
                         <th>آخر دخول</th>
                         <th>الحالة</th>
-                        <th style="width: 150px;">الإجراءات</th>
+                        <th style="width: 180px;">الإجراءات</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,6 +128,9 @@
                                     <div class="btn-group">
                                         <a href="@Url.Action("Edit", new { id = user.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
                                             <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="@Url.Action("Roles", new { id = user.Id })" class="btn btn-sm btn-outline-success" title="الأدوار">
+                                            <i class="bi bi-person-badge"></i>
                                         </a>
                                         <form asp-action="ToggleStatus" asp-route-id="@user.Id" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()

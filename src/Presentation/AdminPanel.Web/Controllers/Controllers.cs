@@ -443,6 +443,49 @@ public class UsersController : BaseController
         SetSuccessMessage("تم إعادة تعيين كلمة المرور بنجاح");
         return RedirectToAction(nameof(Index));
     }
+
+    [HttpGet]
+    public async Task<IActionResult> Roles(int id)
+    {
+        var userResult = await _userService.GetByIdAsync(id);
+        if (userResult.IsFailure)
+        {
+            SetErrorMessage("المستخدم غير موجود");
+            return RedirectToAction(nameof(Index));
+        }
+
+        var rolesResult = await _userService.GetUserRolesAsync(id);
+        if (rolesResult.IsFailure)
+        {
+            SetErrorMessage("خطأ في جلب الأدوار");
+            return RedirectToAction(nameof(Index));
+        }
+
+        var viewModel = new UserRolesViewModel
+        {
+            UserId = id,
+            Username = userResult.Data!.Username,
+            FullName = userResult.Data.FullName,
+            Email = userResult.Data.Email,
+            Roles = rolesResult.Data!
+        };
+
+        return View(viewModel);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AssignRoles(UserRolesAssignDto dto)
+    {
+        var result = await _userService.AssignRolesAsync(dto.UserId, dto.RoleIds ?? new List<int>());
+
+        if (result.IsFailure)
+            SetErrorMessage(result.Errors.FirstOrDefault() ?? "خطأ في حفظ الأدوار");
+        else
+            SetSuccessMessage("تم حفظ الأدوار بنجاح");
+
+        return RedirectToAction(nameof(Roles), new { id = dto.UserId });
+    }
 }
 #endregion
 
