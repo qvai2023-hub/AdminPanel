@@ -201,9 +201,9 @@ public class RolesController : BaseApiController
     }
 
     [HttpGet("paged")]
-    public async Task<ActionResult<ApiResponse<PaginatedList<RoleListDto>>>> GetPaged([FromQuery] PaginationParams pagination)
+    public async Task<ActionResult<ApiResponse<PaginatedList<RoleListDto>>>> GetPaged([FromQuery] RoleFilterDto filter)
     {
-        var result = await _roleService.GetPagedAsync(pagination);
+        var result = await _roleService.GetPagedAsync(filter);
         return Ok(HandleResult(result));
     }
 
