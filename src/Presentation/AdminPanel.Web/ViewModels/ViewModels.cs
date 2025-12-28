@@ -196,6 +196,40 @@ public class RolePermissionsViewModel
     public List<int> GrantedPermissionIds { get; set; } = new();
 }
 
+public class RolePermissionMatrixViewModel
+{
+    public int RoleId { get; set; }
+    public string RoleName { get; set; } = string.Empty;
+    public bool IsSystemRole { get; set; }
+    public List<RolePagePermissionViewModel> Pages { get; set; } = new();
+    public List<RoleActionHeaderViewModel> Actions { get; set; } = new();
+}
+
+public class RolePagePermissionViewModel
+{
+    public int PageId { get; set; }
+    public string NameAr { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string? Icon { get; set; }
+    public List<RoleActionPermissionViewModel> ActionPermissions { get; set; } = new();
+}
+
+public class RoleActionHeaderViewModel
+{
+    public int ActionId { get; set; }
+    public string NameAr { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string? Icon { get; set; }
+}
+
+public class RoleActionPermissionViewModel
+{
+    public int ActionId { get; set; }
+    public int? PageActionId { get; set; }
+    public bool IsAvailable { get; set; }
+    public bool IsGranted { get; set; }
+}
+
 // Profile
 public class ProfileViewModel
 {

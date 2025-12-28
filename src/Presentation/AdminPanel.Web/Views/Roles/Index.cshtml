@@ -118,7 +118,10 @@
                                         <a href="@Url.Action("Edit", new { id = role.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="@Url.Action("Permissions", new { id = role.Id })" class="btn btn-sm btn-outline-info" title="الصلاحيات">
+                                        <a href="@Url.Action("PermissionMatrix", new { id = role.Id })" class="btn btn-sm btn-outline-success" title="صلاحيات الصفحات">
+                                            <i class="bi bi-grid-3x3-gap"></i>
+                                        </a>
+                                        <a href="@Url.Action("Permissions", new { id = role.Id })" class="btn btn-sm btn-outline-info" title="صلاحيات النظام">
                                             <i class="bi bi-key"></i>
                                         </a>
                                         @if (!role.IsSystemRole)
