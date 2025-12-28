@@ -26,18 +26,24 @@ public class MenuService : IMenuService
         if (!userRoleIds.Any())
             return new List<MenuItemDto>();
 
-        // 2. Get all granted PageActionIds for user's roles where action code is "view"
-        var grantedPageIds = await _context.RolePageActions
+        // 2. SQL Server 2008 compatible: Load all RolePageActions with includes, then filter in memory
+        var allRolePageActions = await _context.RolePageActions
             .AsNoTracking()
             .Include(rpa => rpa.PageAction)
             .ThenInclude(pa => pa!.Action)
+            .ToListAsync(cancellationToken);
+
+        // Filter in memory for user's roles with "view" permission
+        var grantedPageIds = allRolePageActions
             .Where(rpa => userRoleIds.Contains(rpa.RoleId)
                        && rpa.IsGranted
-                       && rpa.PageAction!.Action!.Code.ToLower() == "view"
+                       && rpa.PageAction != null
+                       && rpa.PageAction.Action != null
+                       && rpa.PageAction.Action.Code.Equals("view", StringComparison.OrdinalIgnoreCase)
                        && rpa.PageAction.IsActive)
             .Select(rpa => rpa.PageAction!.PageId)
             .Distinct()
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         // 3. Get all active menu pages
         var allPages = await _context.Pages
