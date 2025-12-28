@@ -35,13 +35,13 @@ public class MenuService : IMenuService
             .ToListAsync(cancellationToken);
 
         // Filter in memory for user's roles with "view" permission
+        // Note: Removed PageAction.IsActive check - parent pages may not have actions configured
         var grantedPageIds = allRolePageActions
             .Where(rpa => userRoleIds.Contains(rpa.RoleId)
                        && rpa.IsGranted
                        && rpa.PageAction != null
                        && rpa.PageAction.Action != null
-                       && rpa.PageAction.Action.Code.Equals("view", StringComparison.OrdinalIgnoreCase)
-                       && rpa.PageAction.IsActive)
+                       && rpa.PageAction.Action.Code.Equals("view", StringComparison.OrdinalIgnoreCase))
             .Select(rpa => rpa.PageAction!.PageId)
             .Distinct()
             .ToList();
