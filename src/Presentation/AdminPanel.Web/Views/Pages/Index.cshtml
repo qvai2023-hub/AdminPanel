@@ -83,22 +83,22 @@
                 <tbody>
                     @if (Model.Pages.Items.Any())
                     {
-                        @foreach (var page in Model.Pages.Items)
+                        @foreach (var item in Model.Pages.Items)
                         {
                             <tr>
-                                <td>@page.Id</td>
+                                <td>@item.Id</td>
                                 <td>
-                                    <strong>@page.NameAr</strong>
+                                    <strong>@item.NameAr</strong>
                                     <br />
-                                    <small class="text-muted">@page.NameEn</small>
+                                    <small class="text-muted">@item.NameEn</small>
                                 </td>
                                 <td>
-                                    <code class="bg-light px-2 py-1 rounded" dir="ltr">@page.Url</code>
+                                    <code class="bg-light px-2 py-1 rounded" dir="ltr">@item.Url</code>
                                 </td>
                                 <td>
-                                    @if (!string.IsNullOrEmpty(page.ParentNameAr))
+                                    @if (!string.IsNullOrEmpty(item.ParentNameAr))
                                     {
-                                        <span class="badge bg-secondary">@page.ParentNameAr</span>
+                                        <span class="badge bg-secondary">@item.ParentNameAr</span>
                                     }
                                     else
                                     {
@@ -106,10 +106,10 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (!string.IsNullOrEmpty(page.Icon))
+                                    @if (!string.IsNullOrEmpty(item.Icon))
                                     {
-                                        <i class="bi bi-@page.Icon fs-5"></i>
-                                        <small class="text-muted ms-1">@page.Icon</small>
+                                        <i class="bi bi-@item.Icon fs-5"></i>
+                                        <small class="text-muted ms-1">@item.Icon</small>
                                     }
                                     else
                                     {
@@ -117,13 +117,13 @@
                                     }
                                 </td>
                                 <td>
-                                    <a href="@Url.Action("Actions", new { id = page.Id })" class="text-decoration-none">
-                                        <span class="badge bg-info">@page.ActionsCount إجراء</span>
+                                    <a href="@Url.Action("Actions", new { id = item.Id })" class="text-decoration-none">
+                                        <span class="badge bg-info">@item.ActionsCount إجراء</span>
                                     </a>
                                 </td>
-                                <td>@page.DisplayOrder</td>
+                                <td>@item.DisplayOrder</td>
                                 <td>
-                                    @if (page.IsInMenu)
+                                    @if (item.IsInMenu)
                                     {
                                         <span class="badge bg-success"><i class="bi bi-check"></i></span>
                                     }
@@ -133,7 +133,7 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (page.IsActive)
+                                    @if (item.IsActive)
                                     {
                                         <span class="badge bg-success">نشط</span>
                                     }
@@ -144,26 +144,26 @@
                                 </td>
                                 <td>
                                     <div class="btn-group">
-                                        <a href="@Url.Action("Edit", new { id = page.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="@Url.Action("Actions", new { id = page.Id })" class="btn btn-sm btn-outline-info" title="الإجراءات">
+                                        <a href="@Url.Action("Actions", new { id = item.Id })" class="btn btn-sm btn-outline-info" title="الإجراءات">
                                             <i class="bi bi-gear"></i>
                                         </a>
-                                        <form asp-action="ToggleStatus" asp-route-id="@page.Id" method="post" class="d-inline">
+                                        <form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="@(page.IsActive ? "تعطيل" : "تفعيل")">
-                                                <i class="bi bi-@(page.IsActive ? "pause" : "play")"></i>
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="@(item.IsActive ? "تعطيل" : "تفعيل")">
+                                                <i class="bi bi-@(item.IsActive ? "pause" : "play")"></i>
                                             </button>
                                         </form>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@page.Id, '@page.NameAr')" title="حذف" @(page.ChildrenCount > 0 ? "disabled" : "")>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@item.Id, '@item.NameAr')" title="حذف" @(item.ChildrenCount > 0 ? "disabled" : "")>
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
-                                    @if (page.ChildrenCount > 0)
+                                    @if (item.ChildrenCount > 0)
                                     {
                                         <br />
-                                        <small class="text-muted">@page.ChildrenCount صفحات فرعية</small>
+                                        <small class="text-muted">@item.ChildrenCount صفحات فرعية</small>
                                     }
                                 </td>
                             </tr>
