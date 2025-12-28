@@ -1,6 +1,6 @@
 using AdminPanel.Application.Common.Interfaces;
 using AdminPanel.Application.Features.Menu.DTOs;
-using AdminPanel.Domain.Entities;
+using AdminPanel.Domain.Entities.Identity;
 using AdminPanel.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
