@@ -37,6 +37,13 @@ public static class Messages
         public const string ActionActivated = "تم تفعيل الإجراء بنجاح";
         public const string ActionDeactivated = "تم تعطيل الإجراء بنجاح";
 
+        public const string PageCreated = "تم إنشاء الصفحة بنجاح";
+        public const string PageUpdated = "تم تحديث الصفحة بنجاح";
+        public const string PageDeleted = "تم حذف الصفحة بنجاح";
+        public const string PageActivated = "تم تفعيل الصفحة بنجاح";
+        public const string PageDeactivated = "تم تعطيل الصفحة بنجاح";
+        public const string PageActionsAssigned = "تم تحديث إجراءات الصفحة بنجاح";
+
         public const string FileUploaded = "تم رفع الملف بنجاح";
         public const string FileDeleted = "تم حذف الملف بنجاح";
         public const string ExportSuccess = "تم التصدير بنجاح";
@@ -76,6 +83,10 @@ public static class Messages
         public const string ActionNotFound = "الإجراء غير موجود";
         public const string ActionCodeExists = "كود الإجراء مستخدم مسبقاً";
         public const string ActionHasPageActions = "لا يمكن حذف إجراء مرتبط بصفحات";
+
+        public const string PageNotFound = "الصفحة غير موجودة";
+        public const string PageUrlExists = "رابط الصفحة مستخدم مسبقاً";
+        public const string PageHasChildren = "لا يمكن حذف صفحة لديها صفحات فرعية";
 
         public const string FileNotFound = "الملف غير موجود";
         public const string FileTypeNotAllowed = "نوع الملف غير مسموح به";

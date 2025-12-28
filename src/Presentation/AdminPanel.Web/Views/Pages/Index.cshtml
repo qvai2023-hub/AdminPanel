@@ -1,0 +1,243 @@
+@model PagesViewModel
+@{
+    ViewData["Title"] = "إدارة الصفحات";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-files me-2"></i>إدارة الصفحات</h2>
+        <p class="text-muted mb-0">إجمالي @Model.Pages.TotalCount صفحة</p>
+    </div>
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>إضافة صفحة
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card table-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">بحث</label>
+                <input type="text" name="SearchTerm" class="form-control" placeholder="اسم أو رابط..." value="@Model.Filter.SearchTerm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">القسم الرئيسي</label>
+                <select name="ParentId" class="form-select">
+                    <option value="">كل الأقسام</option>
+                    @foreach (var parent in Model.ParentPages.Where(p => p.ParentId == null))
+                    {
+                        <option value="@parent.Id" selected="@(Model.Filter.ParentId == parent.Id ? "selected" : null)">@parent.NameAr</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">الحالة</label>
+                <select name="IsActive" class="form-select">
+                    <option value="">كل الحالات</option>
+                    <option value="true" selected="@(Model.Filter.IsActive == true ? "selected" : null)">نشط</option>
+                    <option value="false" selected="@(Model.Filter.IsActive == false ? "selected" : null)">غير نشط</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small text-muted">عدد</label>
+                <select name="PageSize" class="form-select">
+                    <option value="10" selected="@(Model.Filter.PageSize == 10 ? "selected" : null)">10</option>
+                    <option value="25" selected="@(Model.Filter.PageSize == 25 ? "selected" : null)">25</option>
+                    <option value="50" selected="@(Model.Filter.PageSize == 50 ? "selected" : null)">50</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i>بحث
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>عرض الكل
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Pages Table -->
+<div class="card table-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الاسم (عربي)</th>
+                        <th>الرابط</th>
+                        <th>القسم الرئيسي</th>
+                        <th>الأيقونة</th>
+                        <th>الإجراءات</th>
+                        <th>الترتيب</th>
+                        <th>في القائمة</th>
+                        <th>الحالة</th>
+                        <th style="width: 180px;">العمليات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Pages.Items.Any())
+                    {
+                        @foreach (var item in Model.Pages.Items)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>
+                                    <strong>@item.NameAr</strong>
+                                    <br />
+                                    <small class="text-muted">@item.NameEn</small>
+                                </td>
+                                <td>
+                                    <code class="bg-light px-2 py-1 rounded" dir="ltr">@item.Url</code>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.ParentNameAr))
+                                    {
+                                        <span class="badge bg-secondary">@item.ParentNameAr</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Icon))
+                                    {
+                                        <i class="bi bi-@item.Icon fs-5"></i>
+                                        <small class="text-muted ms-1">@item.Icon</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Actions", new { id = item.Id })" class="text-decoration-none">
+                                        <span class="badge bg-info">@item.ActionsCount إجراء</span>
+                                    </a>
+                                </td>
+                                <td>@item.DisplayOrder</td>
+                                <td>
+                                    @if (item.IsInMenu)
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary"><i class="bi bi-x"></i></span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">غير نشط</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="@Url.Action("Actions", new { id = item.Id })" class="btn btn-sm btn-outline-info" title="الإجراءات">
+                                            <i class="bi bi-gear"></i>
+                                        </a>
+                                        <form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="@(item.IsActive ? "تعطيل" : "تفعيل")">
+                                                <i class="bi bi-@(item.IsActive ? "pause" : "play")"></i>
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@item.Id, '@item.NameAr')" title="حذف" @(item.ChildrenCount > 0 ? "disabled" : "")>
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    @if (item.ChildrenCount > 0)
+                                    {
+                                        <br />
+                                        <small class="text-muted">@item.ChildrenCount صفحات فرعية</small>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                <span class="text-muted">لا يوجد صفحات</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (Model.Pages.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination mb-0 justify-content-center">
+                    <li class="page-item @(Model.Pages.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Filter.PageNumber - 1, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive, Model.Filter.ParentId })">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= Model.Pages.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.Filter.PageNumber ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive, Model.Filter.ParentId })">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.Pages.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Filter.PageNumber + 1, Model.Filter.PageSize, Model.Filter.SearchTerm, Model.Filter.IsActive, Model.Filter.ParentId })">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>هل أنت متأكد من حذف الصفحة: <strong id="pageNameToDelete"></strong>؟</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <form id="deleteForm" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">حذف</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id, name) {
+            document.getElementById('pageNameToDelete').textContent = name;
+            document.getElementById('deleteForm').action = '/Pages/Delete/' + id;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
+}
