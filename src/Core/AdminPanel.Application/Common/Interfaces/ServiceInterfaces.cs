@@ -42,10 +42,12 @@ public interface IRoleService
 {
     Task<Result<RoleDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<Result<List<RoleListDto>>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<Result<PaginatedList<RoleListDto>>> GetPagedAsync(PaginationParams pagination, CancellationToken cancellationToken = default);
+    Task<Result<PaginatedList<RoleListDto>>> GetPagedAsync(RoleFilterDto filter, CancellationToken cancellationToken = default);
     Task<Result<RoleDto>> CreateAsync(CreateRoleDto dto, CancellationToken cancellationToken = default);
     Task<Result<RoleDto>> UpdateAsync(int id, UpdateRoleDto dto, CancellationToken cancellationToken = default);
     Task<Result<bool>> DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<bool>> ToggleStatusAsync(int id, CancellationToken cancellationToken = default);
+    Task<bool> IsNameUniqueAsync(string name, int? excludeId = null, CancellationToken cancellationToken = default);
     Task<Result<bool>> AssignPermissionsAsync(int roleId, List<PermissionAssignmentDto> permissions, CancellationToken cancellationToken = default);
     Task<Result<List<PermissionDto>>> GetRolePermissionsAsync(int roleId, CancellationToken cancellationToken = default);
 }

@@ -6,6 +6,7 @@ public class RoleDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsSystemRole { get; set; }
+    public bool IsActive { get; set; }
     public int UsersCount { get; set; }
     public int PermissionsCount { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -17,6 +18,7 @@ public class RoleListDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsSystemRole { get; set; }
+    public bool IsActive { get; set; }
     public int UsersCount { get; set; }
     public int PermissionsCount { get; set; }
 }
@@ -32,6 +34,16 @@ public class UpdateRoleDto
 {
     public string? Name { get; set; }
     public string? Description { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class RoleFilterDto
+{
+    public string? SearchTerm { get; set; }
+    public bool? IsActive { get; set; }
+    public bool? IsSystemRole { get; set; }
+    public int PageNumber { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
 }
 
 public class AssignPermissionsDto

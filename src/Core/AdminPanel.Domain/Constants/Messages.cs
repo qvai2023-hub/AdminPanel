@@ -29,6 +29,8 @@ public static class Messages
         public const string RoleCreated = "تم إنشاء الدور بنجاح";
         public const string RoleUpdated = "تم تحديث الدور بنجاح";
         public const string RoleDeleted = "تم حذف الدور بنجاح";
+        public const string RoleActivated = "تم تفعيل الدور بنجاح";
+        public const string RoleDeactivated = "تم تعطيل الدور بنجاح";
         public const string PermissionsAssigned = "تم تحديث الصلاحيات بنجاح";
 
         public const string ActionCreated = "تم إنشاء الإجراء بنجاح";

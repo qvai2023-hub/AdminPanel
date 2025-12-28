@@ -26,60 +26,110 @@ public class RoleService : IRoleService
         var role = await _context.Roles
             .Include(r => r.UserRoles)
             .Include(r => r.RolePermissions)
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
 
         if (role == null)
             return Result<RoleDto>.Failure(Messages.Error.RoleNotFound);
 
-        return Result<RoleDto>.Success(_mapper.Map<RoleDto>(role));
+        var dto = new RoleDto
+        {
+            Id = role.Id,
+            Name = role.Name,
+            Description = role.Description,
+            IsSystemRole = role.IsSystemRole,
+            IsActive = role.IsActive,
+            UsersCount = role.UserRoles.Count,
+            PermissionsCount = role.RolePermissions.Count,
+            CreatedAt = role.CreatedAt
+        };
+
+        return Result<RoleDto>.Success(dto);
     }
 
     public async Task<Result<List<RoleListDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
+        // SQL Server 2008 compatible: Load all then process in memory
         var roles = await _context.Roles
+            .AsNoTracking()
             .Include(r => r.UserRoles)
             .Include(r => r.RolePermissions)
-            .OrderBy(r => r.Name)
+            .Where(r => !r.IsDeleted)
             .ToListAsync(cancellationToken);
 
-        return Result<List<RoleListDto>>.Success(_mapper.Map<List<RoleListDto>>(roles));
-    }
-
-    public async Task<Result<PaginatedList<RoleListDto>>> GetPagedAsync(PaginationParams pagination, CancellationToken cancellationToken = default)
-    {
-        var query = _context.Roles
-            .Include(r => r.UserRoles)
-            .Include(r => r.RolePermissions)
-            .AsQueryable();
-
-        if (!string.IsNullOrEmpty(pagination.SearchTerm))
-        {
-            query = query.Where(r => r.Name.Contains(pagination.SearchTerm) ||
-                                     (r.Description != null && r.Description.Contains(pagination.SearchTerm)));
-        }
-
-        query = pagination.SortDescending
-            ? query.OrderByDescending(r => r.Name)
-            : query.OrderBy(r => r.Name);
-
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        // SQL Server 2008 compatible: Load all then paginate in memory
-        var allItems = await query.ToListAsync(cancellationToken);
-        var items = allItems
-            .Skip((pagination.PageNumber - 1) * pagination.PageSize)
-            .Take(pagination.PageSize)
+        var dtos = roles
+            .OrderBy(r => r.Name)
+            .Select(r => new RoleListDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.Description,
+                IsSystemRole = r.IsSystemRole,
+                IsActive = r.IsActive,
+                UsersCount = r.UserRoles.Count,
+                PermissionsCount = r.RolePermissions.Count
+            })
             .ToList();
 
-        var dtos = _mapper.Map<List<RoleListDto>>(items);
-        var result = new PaginatedList<RoleListDto>(dtos, totalCount, pagination.PageNumber, pagination.PageSize);
+        return Result<List<RoleListDto>>.Success(dtos);
+    }
 
+    public async Task<Result<PaginatedList<RoleListDto>>> GetPagedAsync(RoleFilterDto filter, CancellationToken cancellationToken = default)
+    {
+        // SQL Server 2008 compatible: Load all with includes, then filter/paginate in memory
+        var allRoles = await _context.Roles
+            .AsNoTracking()
+            .Include(r => r.UserRoles)
+            .Include(r => r.RolePermissions)
+            .Where(r => !r.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        // Apply filters in memory
+        var filteredRoles = allRoles.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(filter.SearchTerm))
+        {
+            var searchTerm = filter.SearchTerm.ToLower();
+            filteredRoles = filteredRoles.Where(r =>
+                r.Name.ToLower().Contains(searchTerm) ||
+                (r.Description != null && r.Description.ToLower().Contains(searchTerm)));
+        }
+
+        if (filter.IsActive.HasValue)
+        {
+            filteredRoles = filteredRoles.Where(r => r.IsActive == filter.IsActive.Value);
+        }
+
+        if (filter.IsSystemRole.HasValue)
+        {
+            filteredRoles = filteredRoles.Where(r => r.IsSystemRole == filter.IsSystemRole.Value);
+        }
+
+        // Order and paginate
+        var orderedRoles = filteredRoles.OrderBy(r => r.Name).ToList();
+        var totalCount = orderedRoles.Count;
+
+        var pagedRoles = orderedRoles
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .Select(r => new RoleListDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.Description,
+                IsSystemRole = r.IsSystemRole,
+                IsActive = r.IsActive,
+                UsersCount = r.UserRoles.Count,
+                PermissionsCount = r.RolePermissions.Count
+            })
+            .ToList();
+
+        var result = new PaginatedList<RoleListDto>(pagedRoles, totalCount, filter.PageNumber, filter.PageSize);
         return Result<PaginatedList<RoleListDto>>.Success(result);
     }
 
     public async Task<Result<RoleDto>> CreateAsync(CreateRoleDto dto, CancellationToken cancellationToken = default)
     {
-        var exists = await _context.Roles.AnyAsync(r => r.Name == dto.Name, cancellationToken);
+        var exists = await _context.Roles.AnyAsync(r => r.Name == dto.Name && !r.IsDeleted, cancellationToken);
         if (exists)
             return Result<RoleDto>.Failure(Messages.Error.RoleNameExists);
 
@@ -88,6 +138,7 @@ public class RoleService : IRoleService
             Name = dto.Name,
             Description = dto.Description,
             IsSystemRole = false,
+            IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -108,12 +159,28 @@ public class RoleService : IRoleService
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        return Result<RoleDto>.Success(_mapper.Map<RoleDto>(role), Messages.Success.RoleCreated);
+        var resultDto = new RoleDto
+        {
+            Id = role.Id,
+            Name = role.Name,
+            Description = role.Description,
+            IsSystemRole = role.IsSystemRole,
+            IsActive = role.IsActive,
+            UsersCount = 0,
+            PermissionsCount = dto.PermissionIds?.Count ?? 0,
+            CreatedAt = role.CreatedAt
+        };
+
+        return Result<RoleDto>.Success(resultDto, Messages.Success.RoleCreated);
     }
 
     public async Task<Result<RoleDto>> UpdateAsync(int id, UpdateRoleDto dto, CancellationToken cancellationToken = default)
     {
-        var role = await _context.Roles.FindAsync(new object[] { id }, cancellationToken);
+        var role = await _context.Roles
+            .Include(r => r.UserRoles)
+            .Include(r => r.RolePermissions)
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
+
         if (role == null)
             return Result<RoleDto>.Failure(Messages.Error.RoleNotFound);
 
@@ -122,7 +189,7 @@ public class RoleService : IRoleService
 
         if (!string.IsNullOrEmpty(dto.Name))
         {
-            var exists = await _context.Roles.AnyAsync(r => r.Name == dto.Name && r.Id != id, cancellationToken);
+            var exists = await _context.Roles.AnyAsync(r => r.Name == dto.Name && r.Id != id && !r.IsDeleted, cancellationToken);
             if (exists)
                 return Result<RoleDto>.Failure(Messages.Error.RoleNameExists);
             role.Name = dto.Name;
@@ -131,17 +198,30 @@ public class RoleService : IRoleService
         if (dto.Description != null)
             role.Description = dto.Description;
 
+        role.IsActive = dto.IsActive;
         role.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result<RoleDto>.Success(_mapper.Map<RoleDto>(role), Messages.Success.RoleUpdated);
+        var resultDto = new RoleDto
+        {
+            Id = role.Id,
+            Name = role.Name,
+            Description = role.Description,
+            IsSystemRole = role.IsSystemRole,
+            IsActive = role.IsActive,
+            UsersCount = role.UserRoles.Count,
+            PermissionsCount = role.RolePermissions.Count,
+            CreatedAt = role.CreatedAt
+        };
+
+        return Result<RoleDto>.Success(resultDto, Messages.Success.RoleUpdated);
     }
 
     public async Task<Result<bool>> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var role = await _context.Roles
             .Include(r => r.UserRoles)
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
 
         if (role == null)
             return Result<bool>.Failure(Messages.Error.RoleNotFound);
@@ -159,9 +239,34 @@ public class RoleService : IRoleService
         return Result<bool>.Success(true, Messages.Success.RoleDeleted);
     }
 
+    public async Task<Result<bool>> ToggleStatusAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
+        if (role == null)
+            return Result<bool>.Failure(Messages.Error.RoleNotFound);
+
+        if (role.IsSystemRole)
+            return Result<bool>.Failure(Messages.Error.SystemRoleCannotBeModified);
+
+        role.IsActive = !role.IsActive;
+        role.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var message = role.IsActive ? Messages.Success.RoleActivated : Messages.Success.RoleDeactivated;
+        return Result<bool>.Success(true, message);
+    }
+
+    public async Task<bool> IsNameUniqueAsync(string name, int? excludeId = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Roles.Where(r => r.Name == name && !r.IsDeleted);
+        if (excludeId.HasValue)
+            query = query.Where(r => r.Id != excludeId.Value);
+        return !await query.AnyAsync(cancellationToken);
+    }
+
     public async Task<Result<bool>> AssignPermissionsAsync(int roleId, List<PermissionAssignmentDto> permissions, CancellationToken cancellationToken = default)
     {
-        var role = await _context.Roles.FindAsync(new object[] { roleId }, cancellationToken);
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId && !r.IsDeleted, cancellationToken);
         if (role == null)
             return Result<bool>.Failure(Messages.Error.RoleNotFound);
 
@@ -187,7 +292,7 @@ public class RoleService : IRoleService
 
     public async Task<Result<List<PermissionDto>>> GetRolePermissionsAsync(int roleId, CancellationToken cancellationToken = default)
     {
-        var role = await _context.Roles.FindAsync(new object[] { roleId }, cancellationToken);
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId && !r.IsDeleted, cancellationToken);
         if (role == null)
             return Result<List<PermissionDto>>.Failure(Messages.Error.RoleNotFound);
 
