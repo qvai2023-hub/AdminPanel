@@ -1,0 +1,74 @@
+@model List<AdminPanel.Application.Features.Menu.DTOs.MenuItemDto>
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString()?.ToLower() ?? "";
+    var currentPath = Context.Request.Path.Value?.ToLower() ?? "/";
+}
+
+@foreach (var item in Model)
+{
+    var isActive = !string.IsNullOrEmpty(item.Url) &&
+                   (currentPath.Equals(item.Url.ToLower()) ||
+                    currentPath.StartsWith(item.Url.ToLower() + "/"));
+
+    var hasActiveChild = item.Children.Any(c =>
+        !string.IsNullOrEmpty(c.Url) &&
+        (currentPath.Equals(c.Url.ToLower()) ||
+         currentPath.StartsWith(c.Url.ToLower() + "/")));
+
+    @if (item.Children.Any())
+    {
+        <!-- Parent with children (submenu) -->
+        <li class="has-submenu">
+            <a href="#submenu-@item.Id" class="@(hasActiveChild ? "active" : "")" data-bs-toggle="collapse" aria-expanded="@(hasActiveChild ? "true" : "false")">
+                @if (!string.IsNullOrEmpty(item.Icon))
+                {
+                    <i class="bi bi-@item.Icon"></i>
+                }
+                else
+                {
+                    <i class="bi bi-folder"></i>
+                }
+                <span>@item.NameAr</span>
+                <i class="bi bi-chevron-down submenu-arrow"></i>
+            </a>
+            <ul class="submenu collapse @(hasActiveChild ? "show" : "")" id="submenu-@item.Id">
+                @foreach (var child in item.Children)
+                {
+                    var isChildActive = !string.IsNullOrEmpty(child.Url) &&
+                                       (currentPath.Equals(child.Url.ToLower()) ||
+                                        currentPath.StartsWith(child.Url.ToLower() + "/"));
+                    <li>
+                        <a href="@child.Url" class="@(isChildActive ? "active" : "")">
+                            @if (!string.IsNullOrEmpty(child.Icon))
+                            {
+                                <i class="bi bi-@child.Icon"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-circle"></i>
+                            }
+                            <span>@child.NameAr</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </li>
+    }
+    else
+    {
+        <!-- Single menu item -->
+        <li>
+            <a href="@item.Url" class="@(isActive ? "active" : "")">
+                @if (!string.IsNullOrEmpty(item.Icon))
+                {
+                    <i class="bi bi-@item.Icon"></i>
+                }
+                else
+                {
+                    <i class="bi bi-circle"></i>
+                }
+                <span>@item.NameAr</span>
+            </a>
+        </li>
+    }
+}

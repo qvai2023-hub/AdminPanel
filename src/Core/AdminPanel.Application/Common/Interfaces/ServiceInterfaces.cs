@@ -2,6 +2,7 @@
 using AdminPanel.Application.Features.Actions.DTOs;
 using AdminPanel.Application.Features.Auth.DTOs;
 using AdminPanel.Application.Features.Calendar.DTOs;
+using AdminPanel.Application.Features.Menu.DTOs;
 using AdminPanel.Application.Features.Pages.DTOs;
 using AdminPanel.Application.Features.Permissions.DTOs;
 using AdminPanel.Application.Features.Roles.DTOs;
@@ -169,4 +170,9 @@ public interface IPageService
     Task<Result<List<ActionListDto>>> GetPageActionsAsync(int pageId, CancellationToken cancellationToken = default);
     Task<Result<List<ActionListDto>>> GetAllActionsWithAssignmentAsync(int pageId, CancellationToken cancellationToken = default);
     Task<Result<bool>> AssignActionsAsync(int pageId, List<int> actionIds, CancellationToken cancellationToken = default);
+}
+
+public interface IMenuService
+{
+    Task<List<MenuItemDto>> GetUserMenuAsync(int userId, CancellationToken cancellationToken = default);
 }
