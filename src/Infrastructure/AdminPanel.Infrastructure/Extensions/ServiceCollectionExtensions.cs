@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ICalendarService, CalendarService>();
         services.AddScoped<IActionService, ActionService>();
         services.AddScoped<IPageService, PageService>();
+        services.AddScoped<IMenuService, MenuService>();
 
         return services;
     }

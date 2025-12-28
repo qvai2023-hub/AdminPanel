@@ -81,7 +81,37 @@
             margin-left: 10px;
             font-size: 1.2rem;
         }
-        
+
+        .sidebar-menu a .submenu-arrow {
+            margin-right: auto;
+            margin-left: 0;
+            transition: transform 0.3s;
+        }
+
+        .sidebar-menu a[aria-expanded="true"] .submenu-arrow {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-menu .submenu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .sidebar-menu .submenu li {
+            border-bottom: none;
+        }
+
+        .sidebar-menu .submenu a {
+            padding: 10px 20px 10px 40px;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-menu .submenu a i {
+            font-size: 0.8rem;
+        }
+
         /* Main Content */
         .main-content {
             margin-right: var(--sidebar-width);
@@ -218,42 +248,16 @@
                 <h4><i class="bi bi-shield-lock me-2"></i>لوحة التحكم</h4>
             </div>
             <ul class="sidebar-menu">
+                <!-- Static: Home always visible -->
                 <li>
                     <a href="@Url.Action("Index", "Home")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
                         <i class="bi bi-house-door"></i>
                         <span>الرئيسية</span>
                     </a>
                 </li>
-                <li>
-                    <a href="@Url.Action("Index", "Users")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active" : "")">
-                        <i class="bi bi-people"></i>
-                        <span>المستخدمين</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="@Url.Action("Index", "Roles")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Roles" ? "active" : "")">
-                        <i class="bi bi-shield-check"></i>
-                        <span>الأدوار</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="@Url.Action("Index", "Actions")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Actions" ? "active" : "")">
-                        <i class="bi bi-gear"></i>
-                        <span>الإجراءات</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="@Url.Action("Index", "Pages")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Pages" ? "active" : "")">
-                        <i class="bi bi-files"></i>
-                        <span>الصفحات</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="@Url.Action("Index", "Calendar")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Calendar" ? "active" : "")">
-                        <i class="bi bi-calendar3"></i>
-                        <span>التقويم</span>
-                    </a>
-                </li>
+                <!-- Dynamic Menu from Pages with permissions -->
+                @await Component.InvokeAsync("SidebarMenu")
+                <!-- Static: Profile always visible -->
                 <li>
                     <a href="@Url.Action("Index", "Profile")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Profile" ? "active" : "")">
                         <i class="bi bi-person-circle"></i>
