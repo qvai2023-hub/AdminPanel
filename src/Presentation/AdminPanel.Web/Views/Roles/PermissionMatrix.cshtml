@@ -71,17 +71,17 @@ else
                                 <th class="sticky-col bg-light" style="min-width: 200px;">
                                     <i class="bi bi-file-earmark-text me-1"></i>الصفحة
                                 </th>
-                                @foreach (var action in Model.Actions)
+                                @foreach (var act in Model.Actions)
                                 {
                                     <th class="text-center" style="min-width: 100px;">
                                         <div class="d-flex flex-column align-items-center">
-                                            @if (!string.IsNullOrEmpty(action.Icon))
+                                            @if (!string.IsNullOrEmpty(act.Icon))
                                             {
-                                                <i class="bi bi-@action.Icon mb-1"></i>
+                                                <i class="bi bi-@(act.Icon) mb-1"></i>
                                             }
-                                            <span>@action.NameAr</span>
+                                            <span>@act.NameAr</span>
                                             <button type="button" class="btn btn-link btn-sm p-0 text-muted"
-                                                    onclick="toggleColumn(@action.ActionId)" title="تحديد/إلغاء العمود">
+                                                    onclick="toggleColumn(@act.ActionId)" title="تحديد/إلغاء العمود">
                                                 <i class="bi bi-arrows-vertical"></i>
                                             </button>
                                         </div>
@@ -93,27 +93,27 @@ else
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var page in Model.Pages)
+                            @foreach (var item in Model.Pages)
                             {
                                 <tr>
                                     <td class="sticky-col bg-white">
                                         <div class="d-flex align-items-center">
-                                            @if (!string.IsNullOrEmpty(page.Icon))
+                                            @if (!string.IsNullOrEmpty(item.Icon))
                                             {
-                                                <i class="bi bi-@page.Icon me-2 text-primary"></i>
+                                                <i class="bi bi-@(item.Icon) me-2 text-primary"></i>
                                             }
                                             else
                                             {
                                                 <i class="bi bi-file-earmark me-2 text-muted"></i>
                                             }
                                             <div>
-                                                <strong>@page.NameAr</strong>
+                                                <strong>@item.NameAr</strong>
                                                 <br />
-                                                <small class="text-muted">@page.Url</small>
+                                                <small class="text-muted">@item.Url</small>
                                             </div>
                                         </div>
                                     </td>
-                                    @foreach (var actionPerm in page.ActionPermissions)
+                                    @foreach (var actionPerm in item.ActionPermissions)
                                     {
                                         <td class="text-center align-middle">
                                             @if (actionPerm.IsAvailable && actionPerm.PageActionId.HasValue)
@@ -123,7 +123,7 @@ else
                                                            class="form-check-input permission-checkbox"
                                                            name="grantedPageActionIds"
                                                            value="@actionPerm.PageActionId"
-                                                           data-page-id="@page.PageId"
+                                                           data-page-id="@item.PageId"
                                                            data-action-id="@actionPerm.ActionId"
                                                            @(actionPerm.IsGranted ? "checked" : "")
                                                            @(Model.IsSystemRole ? "disabled" : "") />
@@ -139,7 +139,7 @@ else
                                     }
                                     <td class="text-center">
                                         <button type="button" class="btn btn-link btn-sm p-0"
-                                                onclick="toggleRow(@page.PageId)" title="تحديد/إلغاء الصف">
+                                                onclick="toggleRow(@item.PageId)" title="تحديد/إلغاء الصف">
                                             <i class="bi bi-arrows"></i>
                                         </button>
                                     </td>
